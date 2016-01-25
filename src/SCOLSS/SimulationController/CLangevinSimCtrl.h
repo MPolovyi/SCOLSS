@@ -1,9 +1,9 @@
 //
-// Created by mpolovyi on 11/11/15.
+// Created by mpolovyi on 25/01/16.
 //
 
-#ifndef SMALLTESTS_SIMULATIONCONTROLLER_H
-#define SMALLTESTS_SIMULATIONCONTROLLER_H
+#ifndef PROJECT_CLANGEVINSIMCTRL_H
+#define PROJECT_CLANGEVINSIMCTRL_H
 
 #include <vector>
 #include <list>
@@ -18,9 +18,9 @@
 #include <SCOLSS/ParticlePhysics/CYukawaDipolePt.h>
 #include <SCOLSS/EPSPlot/EPSPlot.h>
 
-#include "CSimulationParameters.h"
+#include "CBaseSimCtrl.h"
 
-class CSimulationController {
+class CLangevinSimCtrl : public CBaseSimCtrl {
 public:
     unsigned long Cycles;
 
@@ -104,53 +104,53 @@ public:
     }
 
     CSimulationController(CSimulationParameters d) : SimulationParameters(d) {
-        Cycles = 0;
-        epsLine = 1;
+            Cycles = 0;
+            epsLine = 1;
 
-        InitRandomGenerator();
-        for (int i = 0; i < SimulationParameters.PtCount; i++) {
-            CYukawaDipolePt pt(SimulationParameters.YukawaA, SimulationParameters.YukawaK, SimulationParameters.SystemSize);
-            pt.Coordinates = i > 0
-                             ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
-                               initialDisplacementDistribution(rnd_gen)
-                             : 0;
+            InitRandomGenerator();
+            for (int i = 0; i < SimulationParameters.PtCount; i++) {
+                CYukawaDipolePt pt(SimulationParameters.YukawaA, SimulationParameters.YukawaK, SimulationParameters.SystemSize);
+                pt.Coordinates = i > 0
+                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
+                                   initialDisplacementDistribution(rnd_gen)
+                                 : 0;
 
-            switch (SimulationParameters.InitialConfiguration) {
-                case EInitialConfiguration::Random: {
-                    pt.Rotation = GetRandomUnitQuaternion();
-                    break;
+                switch (SimulationParameters.InitialConfiguration) {
+                    case EInitialConfiguration::Random: {
+                        pt.Rotation = GetRandomUnitQuaternion();
+                        break;
+                    }
+
+                    case EInitialConfiguration::Aligned: {
+                        pt.Rotation = CQuaternion(0, CVector::AxisZ);
+                        break;
+                    }
+
+                    case EInitialConfiguration::AlignedTwoSides: {
+                        pt.Rotation = CQuaternion(M_PI * (i % 2), CVector::AxisY);
+                        break;
+                    }
                 }
-
-                case EInitialConfiguration::Aligned: {
-                    pt.Rotation = CQuaternion(0, CVector::AxisZ);
-                    break;
-                }
-
-                case EInitialConfiguration::AlignedTwoSides: {
-                    pt.Rotation = CQuaternion(M_PI * (i % 2), CVector::AxisY);
-                    break;
-                }
-            }
 #ifdef NON_INTERACTING
-            pt.Rotation = CQuaternion(0, CVector::z);
+                pt.Rotation = CQuaternion(0, CVector::z);
             pt.Coordinates = 0;
 #endif
-            particles_new.push_back(pt);
-            particles_old.push_back(pt);
-        }
+                particles_new.push_back(pt);
+                particles_old.push_back(pt);
+            }
 
-        if (SimulationParameters.PtCount == 2) {
-            particles_new[1].Coordinates = 1;
-            particles_old[1].Coordinates = 1;
+            if (SimulationParameters.PtCount == 2) {
+                particles_new[1].Coordinates = 1;
+                particles_old[1].Coordinates = 1;
 
-            particles_new[0].Rotation = CQuaternion(0, CVector(1, 1, 1));
-            particles_old[0].Rotation = CQuaternion(0, CVector(1, 1, 1));
+                particles_new[0].Rotation = CQuaternion(0, CVector(1, 1, 1));
+                particles_old[0].Rotation = CQuaternion(0, CVector(1, 1, 1));
 
-            particles_new[1].Rotation = CQuaternion(0, CVector(1, 1, 1));
-            particles_old[1].Rotation = CQuaternion(0, CVector(1, 1, 1));
-        }
+                particles_new[1].Rotation = CQuaternion(0, CVector(1, 1, 1));
+                particles_old[1].Rotation = CQuaternion(0, CVector(1, 1, 1));
+            }
 
-        initialize_time = std::chrono::system_clock::now();
+            initialize_time = std::chrono::system_clock::now();
     }
 
     void InitRandomGenerator() {
@@ -187,7 +187,7 @@ public:
         int k = 1;
         for (uint64_t cycle = 1; cycle <= totalCycles; ++cycle) {
             DoCycle();
-            
+
             if (0 == cycle % (SimulationParameters.CyclesBetweenSaves)) {
                 outputArchive(*this);
             }
@@ -576,9 +576,9 @@ protected:
 
     double GetParticlePotentialEnergyOld(int ptIndex) {
         return particles_old[ptIndex].GetPotentialEnergy(particles_old[GetNext(ptIndex)],
-                                                particles_old[GetNext(ptIndex)].GetDistanceLeft(particles_old[ptIndex], SimulationParameters.SystemSize))
+                                                         particles_old[GetNext(ptIndex)].GetDistanceLeft(particles_old[ptIndex], SimulationParameters.SystemSize))
                + particles_old[ptIndex].GetPotentialEnergy(particles_old[GetPrevious(ptIndex)],
-                                                  particles_old[GetPrevious(ptIndex)].GetDistanceRight(particles_old[ptIndex], SimulationParameters.SystemSize));
+                                                           particles_old[GetPrevious(ptIndex)].GetDistanceRight(particles_old[ptIndex], SimulationParameters.SystemSize));
 
     }
 
@@ -669,4 +669,4 @@ protected:
 };
 
 
-#endif //SMALLTESTS_SIMULATIONCONTROLLER_H
+#endif //PROJECT_CLANGEVINSIMCTRL_H

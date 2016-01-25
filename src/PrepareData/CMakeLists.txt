@@ -1,0 +1,7 @@
+set(SCOLSS_PREPARE_DATA_SCRIPTS
+        ${SCOLSS_PREPARE_DATA_DIR}/PrepDataMC.py
+        ${SCOLSS_PREPARE_DATA_DIR}/PrepDataMD.py
+        )
+
+#setup_scripts("${SCOLSS_PREPARE_DATA_SCRIPTS}" "${EPS_PLOT_DIR}")
+setup_scripts("${SCOLSS_PREPARE_DATA_SCRIPTS}" "")

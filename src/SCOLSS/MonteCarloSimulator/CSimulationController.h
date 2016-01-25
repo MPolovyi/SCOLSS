@@ -7,7 +7,7 @@
 #include <memory>
 #include <chrono>
 #include <cereal/archives/json.hpp>
-#include <SCOLSS/ParticlePhysics/CParticle.h>
+#include <SCOLSS/ParticlePhysics/CYukawaDipolePt.h>
 #include <SCOLSS/EPSPlot/EPSPlot.h>
 
 #include "CSimulationParameters.h"
@@ -19,7 +19,7 @@ class CSimulationController {
 public:
     std::chrono::time_point<std::chrono::system_clock> initialize_time;
 
-    std::vector<CParticle> particles;
+    std::vector<CYukawaDipolePt> particles;
 
     CSimulationParameters SimulationParameters;
 
@@ -49,8 +49,8 @@ public:
         archieve(cereal::make_nvp("Energy", GetAveragePotentialEnergy()));
 
         {
-            const CParticle *tmp = &particles[0];
-            archieve.saveBinaryValue(tmp, sizeof(CParticle) * SimulationParameters.PtCount, "Particles");
+            const CYukawaDipolePt *tmp = &particles[0];
+            archieve.saveBinaryValue(tmp, sizeof(CYukawaDipolePt) * SimulationParameters.PtCount, "Particles");
         }
 
 //        {
@@ -118,7 +118,7 @@ private:
 
     size_t GetPreviousParticle(size_t ptIndex) const;
 
-    void AccountForBorderAfterMove(CParticle &pt_new);
+    void AccountForBorderAfterMove(CYukawaDipolePt &pt_new);
 };
 
 #endif //COLLOIDMC_CSIMULATIONCONTROLLER_H

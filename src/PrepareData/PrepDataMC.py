@@ -4,8 +4,8 @@ import shutil as sh
 import xml.etree.ElementTree
 import time
 
-
 __author__ = 'mpolovyi'
+variable2 = 2
 
 simData = {
     "Density": 0.5,

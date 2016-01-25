@@ -21,7 +21,7 @@ public:
     double YukawaA;
     double YukawaK;
 
-    std::vector<CParticle> savedStateToLoad;
+    std::vector<CYukawaDipolePt> savedStateToLoad;
 
     double ParticleDiameter;
     double SystemSize;
@@ -51,7 +51,7 @@ public:
         if (loadSaved == 1) {
             savedStateToLoad.resize(PtCount);
 
-            archive.loadBinaryValue(&savedStateToLoad[0], sizeof(CParticle) * PtCount, "SavedParticles");
+            archive.loadBinaryValue(&savedStateToLoad[0], sizeof(CYukawaDipolePt) * PtCount, "SavedParticles");
         }
 
         YukawaA = 1000;

@@ -10,7 +10,7 @@
 
 #include "CSimulationController.h"
 #include <SCOLSS/EPSPlot/EPSPlot.h>
-#include <SCOLSS/ParticlePhysics/CParticle.h>
+#include <SCOLSS/ParticlePhysics/CYukawaDipolePt.h>
 #include "CSimulationParameters.h"
 
 
@@ -24,7 +24,7 @@ CSimulationController::CSimulationController(CSimulationParameters simulationPar
 
     initialize_time = std::chrono::system_clock::now();
     for (int i = 0; i < SimulationParameters.PtCount; ++i) {
-        CParticle pt(1000, 10, SimulationParameters.SystemSize);
+        CYukawaDipolePt pt(1000, 10, SimulationParameters.SystemSize);
 
         pt.Coordinates = i > 0
                          ? i * (SimulationParameters.ParticleDiameter/SimulationParameters.Density) + initialDisplacementDistribution(rnd_gen)
@@ -283,7 +283,7 @@ size_t CSimulationController::GetPreviousParticle(size_t ptIndex) const {
     return ret;
 }
 
-void CSimulationController::AccountForBorderAfterMove(CParticle &pt_new) {
+void CSimulationController::AccountForBorderAfterMove(CYukawaDipolePt &pt_new) {
     if (SimulationParameters.PtCount == 2){
         return;
     }

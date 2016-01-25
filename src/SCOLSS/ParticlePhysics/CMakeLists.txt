@@ -1,9 +1,9 @@
 set(PARTICLE_PHYS_LIBRARY_HEADERS
-        ${PARTICLE_PHYS_DIR}/CParticle.h
+        ${PARTICLE_PHYS_DIR}/CYukawaDipolePt.h
         ${PARTICLE_PHYS_DIR}/CParticleBase.h)
 
 set(PARTICLE_PHYS_LIBRARY_SOURCES
-        CParticle.cpp
+        CYukawaDipolePt.cpp
         CParticleBase.cpp)
 
 setup_headers("${MATH_LIBRARY_HEADERS}" "${PARTICLE_PHYS_DIR}")
