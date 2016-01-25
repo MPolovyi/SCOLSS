@@ -8,6 +8,7 @@
 #include <cereal/cereal.hpp>
 #include <SCOLSS/ParticlePhysics/CParticleBase.h>
 #include <cmath>
+#include <cstdlib>
 
 enum EInitialConfiguration {
     Random = 0,
@@ -21,14 +22,14 @@ class CBaseSimParams {
 public:
     EInitialConfiguration InitialConfiguration;
 
-    unsigned int PtCount;
+    size_t PtCount;
 
     double KbT;
     double Density;
 
-    unsigned int CyclesBetweenSaves;
-    unsigned int NumberOfSavePoints;
-    unsigned int NumberOfImageLines;
+    size_t CyclesBetweenSaves;
+    size_t NumberOfSavePoints;
+    size_t NumberOfImageLines;
 
     double ParticleDiameter;
     double Radius;
@@ -49,7 +50,7 @@ public:
     }
 
     template<class Archive>
-    virtual void DoSerialize(Archive &archive) const {
+    void DoSerialize(Archive &archive) const {
         archive(cereal::make_nvp("Density", Density));
         archive(cereal::make_nvp("KbT", KbT));
         archive(cereal::make_nvp("PtCount", PtCount));
@@ -62,7 +63,7 @@ public:
     }
 
     template<class Archive>
-    virtual void DoDeSerialize(Archive &archive) {
+    void DoDeSerialize(Archive &archive) {
         YukawaA = 1000;
         YukawaK = 10;
 

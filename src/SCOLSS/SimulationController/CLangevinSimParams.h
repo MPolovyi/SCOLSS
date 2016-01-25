@@ -5,9 +5,9 @@
 #ifndef PROJECT_CLANGEVINSIMPARAMS_H
 #define PROJECT_CLANGEVINSIMPARAMS_H
 
-
 #include <SCOLSS/ParticlePhysics/CYukawaDipolePt.h>
 #include "CBaseSimParams.h"
+#include <cstdlib>
 
 class CLangevinSimParams : public CBaseSimParams {
 public:
@@ -28,13 +28,13 @@ public:
     double VerletCoefficientRotation;
 
     template<class Archive>
-    virtual void DoSerialize(Archive &archive) const {
+    void DoSerialize(Archive &archive) const {
         CBaseSimParams::DoSerialize(archive);
         archive(cereal::make_nvp("TimeStep", TimeStep));
     }
 
     template<class Archive>
-    virtual void DoDeSerialize(Archive &archive) {
+    void DoDeSerialize(Archive &archive) {
         CBaseSimParams::DoDeSerialize(archive);
 
         TimeStep = 0.01;
@@ -64,7 +64,7 @@ protected:
     }
 
     double GetAlphaRotational() const {
-        return 10 * GetInertia() / (3 * TranslationalDampingTime);
+        return 10 * GetInertiaSpherical() / (3 * TranslationalDampingTime);
     }
 
     double GetDistributionDeviationTranslation() const {

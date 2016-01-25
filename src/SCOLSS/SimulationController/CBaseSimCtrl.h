@@ -5,15 +5,13 @@
 #ifndef PROJECT_CBASESIMCTRL_H
 #define PROJECT_CBASESIMCTRL_H
 
-#define __cplusplus 201103L
-
 #include <vector>
-#include <list>
 #include <random>
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/archives/json.hpp>
 #include <fstream>
+#include <cstdlib>
 #include <chrono>
 
 #include <SCOLSS/ParticlePhysics/CParticleBase.h>
@@ -40,12 +38,12 @@ public:
     const CBaseSimParams SimulationParameters;
 
     template<class Archive>
-    void serialize(Archive &archieve) {
+    void save(Archive &archieve) const {
         DoSerialize(archieve);
     }
 
     template<class Archive>
-    virtual void DoSerialize(Archive &archieve) {
+    void DoSerialize(Archive &archieve) const {
         archieve(cereal::make_nvp("SimulationParameters", SimulationParameters));
         archieve(cereal::make_nvp("OrderParameter", GetOrderParameter()));
 
@@ -53,7 +51,7 @@ public:
 
         {
             std::vector<CParticleBase> pts_save;
-            for (int i = 0; i < SimulationParameters.PtCount; ++i) {
+            for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
                 pts_save.push_back(particles_old[i]);
             }
 
@@ -67,9 +65,8 @@ public:
             epsLine = 1;
 
             InitRandomGenerator();
-            for (int i = 0; i < SimulationParameters.PtCount; i++) {
+            for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
                 CYukawaDipolePt pt(SimulationParameters.YukawaA, SimulationParameters.YukawaK, SimulationParameters.SystemSize);
-
 
                 switch (SimulationParameters.InitialConfiguration) {
                     case EInitialConfiguration::Random: {
@@ -83,7 +80,7 @@ public:
 
                     case EInitialConfiguration::RandomUnmoving: {
                         pt.Rotation = GetRandomUnitQuaternion();
-                        pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);                                         : 0;
+                        pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
                         break;
                     }
 
@@ -107,7 +104,7 @@ public:
 
                     case EInitialConfiguration::AlingnedUnmoving: {
                         pt.Rotation = CQuaternion(M_PI * (i % 2), CVector::AxisY);
-                        pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);                                         : 0;
+                        pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
                         break;
                     }
                 }
@@ -118,21 +115,21 @@ public:
             initialize_time = std::chrono::system_clock::now();
     }
 
-    void InitRandomGenerator() {
+    virtual void InitRandomGenerator() {
         uniformDistributionZeroOne = std::uniform_real_distribution<double>(0, 1);
         uniformDistributionZeroTwoPi = std::uniform_real_distribution<double>(0, 2*M_PI);
 
-        initialDisplacementDistribution = std::uniform_real_distribution<double>(
-                -(SimulationParameters.ParticleDiameter/SimulationParameters.Density)/4,
-                (SimulationParameters.ParticleDiameter/SimulationParameters.Density)/4);
+        auto tmp = (SimulationParameters.ParticleDiameter / SimulationParameters.Density) / 4;
+        initialDisplacementDistribution = std::uniform_real_distribution<double>(-tmp, tmp);
 
         time_t rawtime;
         time(&rawtime);
 
-        RandomSeed = rand() + rand() + rand();
-        RandomSeed += rawtime;
+        std::chrono::high_resolution_clock high_resolution_clock;
+        auto tm = std::chrono::time_point_cast<std::chrono::nanoseconds>(high_resolution_clock.now());
 
-        rnd_gen = std::mt19937_64(RandomSeed);
+        rnd_gen();
+        rnd_gen = std::mt19937_64((unsigned long) tm.time_since_epoch().count());
     };
 
     void RunSimulation(cereal::JSONOutputArchive &outputArchive, EPSPlot& pictureSaver) {
@@ -146,7 +143,7 @@ public:
 
         uint64_t totalCycles = SimulationParameters.CyclesBetweenSaves * SimulationParameters.NumberOfSavePoints;
 
-        int k = 1;
+        size_t k = 1;
         for (uint64_t cycle = 1; cycle <= totalCycles; ++cycle) {
             DoCycle();
 
@@ -198,24 +195,20 @@ public:
 
     virtual void DoCycle() { }
 
-    double GetAveragePotentialEnergy() {
-        if (SimulationParameters.PtCount == 2) {
-            return particles_old[0].GetPotentialEnergy(particles_old[1], particles_old[1].GetDistanceLeft(particles_old[0], SimulationParameters.SystemSize));
-        }
-
+    double GetAveragePotentialEnergy() const {
         double ret = 0;
 
-        for (int i = 0; i < SimulationParameters.PtCount; i++) {
+        for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
             auto &pt = particles_old[i];
 
-            ret += GetParticlePotentialEnergyOld(i);
+            ret += GetParticlePotentialEnergy(i);
         }
 
         return ret / 2.0 / SimulationParameters.PtCount;
     }
 
     void SaveForPovray(std::fstream& ofstr) {
-        for (int i = 0; i < SimulationParameters.PtCount; ++i) {
+        for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
             auto rot = particles_old[i].GetOrientation();
             ofstr
             << "Colloid(<0, 0, "
@@ -225,11 +218,11 @@ public:
         }
     }
 
-    unsigned int epsLine;
+    size_t epsLine;
 
     void SaveIntoEps(EPSPlot &outFile) {
         epsLine++;
-        for (int i = 0; i < SimulationParameters.PtCount; ++i) {
+        for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
             auto& pt = particles_old[i];
             auto orient = pt.GetOrientation();
 
@@ -271,17 +264,19 @@ public:
 
     std::vector<CYukawaDipolePt> particles_old;
     std::vector<CYukawaDipolePt> particles_new;
-protected:
 
-    double GetParticlePotentialEnergyOld(int ptIndex) {
+protected:
+    double GetParticlePotentialEnergy(size_t ptIndex) const {
         return particles_old[ptIndex].GetPotentialEnergy(particles_old[GetNext(ptIndex)],
-                                                         particles_old[GetNext(ptIndex)].GetDistanceLeft(particles_old[ptIndex], SimulationParameters.SystemSize))
+                                                         particles_old[GetNext(ptIndex)].GetDistanceLeft(particles_old[ptIndex],
+                                                                                                         SimulationParameters.SystemSize))
                + particles_old[ptIndex].GetPotentialEnergy(particles_old[GetPrevious(ptIndex)],
-                                                           particles_old[GetPrevious(ptIndex)].GetDistanceRight(particles_old[ptIndex], SimulationParameters.SystemSize));
+                                                           particles_old[GetPrevious(ptIndex)].GetDistanceRight(particles_old[ptIndex],
+                                                                                                        SimulationParameters.SystemSize));
 
     }
 
-    double GetOrderParameter() {
+    double GetOrderParameter() const {
         auto ptOrientations = GetParticlesOrientationZ();
 
         double op = 0;
@@ -295,7 +290,7 @@ protected:
         return op;
     }
 
-    std::vector<double> GetParticlesOrientationZ() {
+    std::vector<double> GetParticlesOrientationZ() const {
         std::vector<double> ret;
 
         for (auto &pt : particles_old) {
@@ -305,7 +300,7 @@ protected:
         return ret;
     }
 
-    std::vector<double> GetParticleCoordinatesZ() {
+    std::vector<double> GetParticleCoordinatesZ() const {
         std::vector<double> ret;
 
         for (auto &pt : particles_old) {
@@ -315,8 +310,8 @@ protected:
         return ret;
     }
 
-    inline int GetNext(int ptIndex) {
-        int ret = ptIndex + 1;
+    inline size_t GetNext(size_t ptIndex) const {
+        size_t ret = ptIndex + 1;
 
         if (ret == SimulationParameters.PtCount) {
             return 0;
@@ -325,8 +320,8 @@ protected:
         return ret;
     }
 
-    inline int GetPrevious(int ptIndex) {
-        int ret = ptIndex - 1;
+    inline size_t GetPrevious(size_t ptIndex) const {
+        size_t ret = ptIndex - 1;
 
         if (ret == -1) {
             return SimulationParameters.PtCount - 1;
@@ -349,10 +344,10 @@ protected:
     }
 
     template<typename T>
-    int GetNearestIndex(T arr, double val, int size) {
-        int ret = 0;
+    size_t GetNearestIndex(T arr, double val, size_t size) {
+        size_t ret = 0;
         double dst_old = 100000;
-        for (int i = 0; i < size; i++) {
+        for (size_t i = 0; i < size; i++) {
             double dst = std::abs(val - arr[i]);
             if (dst < dst_old) {
                 dst_old = dst;

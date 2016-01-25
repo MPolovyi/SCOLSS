@@ -5,6 +5,7 @@
 #ifndef PROJECT_CMONTECARLOSIMPARAMS_H
 #define PROJECT_CMONTECARLOSIMPARAMS_H
 
+#include <cstdlib>
 #include <SCOLSS/MathLibrary/FunctionOptimization.h>
 #include "CBaseSimParams.h"
 
@@ -15,13 +16,13 @@ public:
     double MaxTestDisplacement;
 
     template<class Archive>
-    virtual void DoSerialize(Archive &archive) const {
+    void DoSerialize(Archive &archive) const {
         CBaseSimParams::DoSerialize(archive);
         archive(cereal::make_nvp("EquilibriumCycle", EquilibriumCycle));
     }
 
     template<class Archive>
-    virtual void DoDeSerialize(Archive &archive) {
+    void DoDeSerialize(Archive &archive) {
         CBaseSimParams::DoDeSerialize(archive);
 
         archive(cereal::make_nvp("EquilibriumCycle", EquilibriumCycle));

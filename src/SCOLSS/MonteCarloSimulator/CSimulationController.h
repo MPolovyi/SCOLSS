@@ -85,7 +85,7 @@ public:
         );
         return ret;
     }
-private:
+protected:
     std::mt19937_64 rnd_gen;
     std::uniform_real_distribution<double> initialDisplacementDistribution;
     std::uniform_int_distribution<int> uniformDistributionParticleSelect;

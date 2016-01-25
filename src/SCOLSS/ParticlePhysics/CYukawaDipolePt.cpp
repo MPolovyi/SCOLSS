@@ -14,19 +14,6 @@ CVector CYukawaDipolePt::ToLocalSpace(CVector vector) const {
     return Rotation.GetInverse() * vector * Rotation;
 }
 
-double CYukawaDipolePt::GetEnergy(const CVector &orientation, const CVector &other_orientation, CVector dr) const {
-    double dist = dr.GetLength();
-
-    dr.Normalize();
-
-    double Yukawa = A * exp(-k * dist) / dist;
-
-    double Dipole = (3 * orientation.DotProduct(dr) * other_orientation.DotProduct(dr)
-                     - orientation.DotProduct(other_orientation)) / (dist * dist * dist);
-
-    return Yukawa - Dipole;
-}
-
 double CYukawaDipolePt::GetPotentialEnergy(const CYukawaDipolePt &other, CVector dr) const {
     //Yukawa field is directed along the dr vector. But since it's one dimensional case, let's leave it as it is.
     //for 3D case replace .Z with Length()??
