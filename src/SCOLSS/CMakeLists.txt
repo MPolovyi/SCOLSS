@@ -16,6 +16,7 @@ set(SCOLSS_ROOT_DIR
         ${CORE_SIMULATOR_DIR})
 
 include_directories("${SOURCES_INCLUDE_ROOT_DIR}")
+include_directories("~/include")
 
 # Add the sub-directories to cmake process.
 foreach(CURRENT_SUBDIR ${SCOLSS_ROOT_DIR})

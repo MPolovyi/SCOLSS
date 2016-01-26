@@ -62,7 +62,6 @@ else()
     set(LIBRARY_ROOT_DIR "${OUTPUT_ROOT_DIR}/lib")
 
     set(INCLUDE_ROOT_DIR "${OUTPUT_ROOT_DIR}/include")
-    set(INCLUDE_ROOT_DIR "${OUTPUT_ROOT_DIR}/include")
 
     set(BINARY_ROOT_DIR "${OUTPUT_ROOT_DIR}/bin")
     message(STATUS "Configured compiler options and output directories for *nix GCC toolset.")
