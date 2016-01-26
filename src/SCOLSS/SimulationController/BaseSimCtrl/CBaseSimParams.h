@@ -6,9 +6,15 @@
 #define PROJECT_CBASESIMPARAMS_H
 
 #include <cereal/cereal.hpp>
-#include <SCOLSS/ParticlePhysics/CParticleBase.h>
 #include <cmath>
 #include <cstdlib>
+#include <SCOLSS/ParticlePhysics/CParticleBase.h>
+#include <SCOLSS/MathLibrary/FunctionOptimization.h>
+
+enum ESimulationType{
+    MonteCarlo = 0,
+    LangevinDynamics = 1
+};
 
 enum EInitialConfiguration {
     Random = 0,
@@ -21,7 +27,6 @@ enum EInitialConfiguration {
 class CBaseSimParams {
 public:
     EInitialConfiguration InitialConfiguration;
-
     size_t PtCount;
 
     double KbT;
@@ -46,24 +51,15 @@ public:
 
     template<class Archive>
     void save(Archive &archive) const {
-        DoSerialize(archive);
-    }
-
-    template<class Archive>
-    void DoSerialize(Archive &archive) const {
         archive(cereal::make_nvp("Density", Density));
         archive(cereal::make_nvp("KbT", KbT));
         archive(cereal::make_nvp("PtCount", PtCount));
         archive(cereal::make_nvp("InitialConfiguration", InitialConfiguration));
+        archive(cereal::make_nvp("CyclesBetweenSaves", CyclesBetweenSaves));
     }
 
     template<class Archive>
     void load(Archive &archive) {
-        DoDeSerialize(archive);
-    }
-
-    template<class Archive>
-    void DoDeSerialize(Archive &archive) {
         YukawaA = 1000;
         YukawaK = 10;
 
@@ -86,10 +82,15 @@ public:
             InitialConfiguration = (EInitialConfiguration) 0;
         }
 
-        ParticleDiameter = 0.607592984;
-        Radius = ParticleDiameter/2.0;
+        auto Interaction = InteractionFunction(1/KbT, YukawaA, YukawaK, 90);
+        auto min_max_zero = Interaction.GetMinMaxZero();
+
+        ParticleDiameter = min_max_zero.Min;
 
         SystemSize = PtCount * ParticleDiameter / Density;
+
+        Radius = ParticleDiameter/2.0;
+
         Inertia = GetInertiaSpherical();
 
         int loadSaved;

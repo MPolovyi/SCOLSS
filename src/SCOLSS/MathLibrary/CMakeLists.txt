@@ -12,3 +12,4 @@ setup_headers("${MATH_LIBRARY_HEADERS}" "${MATH_DIR}")
 
 add_library(MathLibrary STATIC "${MATH_LIBRARY_SOURCES}")
 setup_custom_target(MathLibrary "${SRC_ROOT_DIR}${MATH_DIR}")
+

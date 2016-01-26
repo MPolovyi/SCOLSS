@@ -6,7 +6,7 @@
 #define SMALLTESTS_PARTICLE_H
 
 #include <vector>
-#include "CParticleBase.h"
+#include <SCOLSS/ParticlePhysics/CParticleBase.h>
 
 class CYukawaDipolePt : public CParticleBase {
 public:

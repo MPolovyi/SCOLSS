@@ -5,14 +5,12 @@
 #ifndef PROJECT_CLANGEVINSIMPARAMS_H
 #define PROJECT_CLANGEVINSIMPARAMS_H
 
-#include <SCOLSS/ParticlePhysics/CYukawaDipolePt.h>
-#include "CBaseSimParams.h"
 #include <cstdlib>
+#include <SCOLSS/ParticlePhysics/CYukawaDipolePt.h>
+#include <SCOLSS/SimulationController/BaseSimCtrl/CBaseSimParams.h>
 
 class CLangevinSimParams : public CBaseSimParams {
 public:
-    unsigned int CyclesBetweenSaves;
-
     double TimeStep;
 
     double TranslationalDampingTime;
@@ -28,14 +26,14 @@ public:
     double VerletCoefficientRotation;
 
     template<class Archive>
-    void DoSerialize(Archive &archive) const {
-        CBaseSimParams::DoSerialize(archive);
+    void save(Archive &archive) const {
+        archive(cereal::make_nvp("Base", cereal::base_class<CBaseSimParams>(this)));
         archive(cereal::make_nvp("TimeStep", TimeStep));
     }
 
     template<class Archive>
-    void DoDeSerialize(Archive &archive) {
-        CBaseSimParams::DoDeSerialize(archive);
+    void load(Archive &archive) {
+        archive(cereal::make_nvp("Base", cereal::base_class<CBaseSimParams>(this)));
 
         TimeStep = 0.01;
         Viscosity = 1;
@@ -84,6 +82,5 @@ protected:
         return 1 / (1 + (GetAlphaRotational() * TimeStep / 2 / Inertia));
     }
 };
-
 
 #endif //PROJECT_CLANGEVINSIMPARAMS_H

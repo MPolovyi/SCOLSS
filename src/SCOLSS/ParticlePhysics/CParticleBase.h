@@ -5,7 +5,6 @@
 #ifndef COLLOIDMD_CPARTICLEBASE_H
 #define COLLOIDMD_CPARTICLEBASE_H
 
-
 #include <SCOLSS/MathLibrary/CVector.h>
 #include <SCOLSS/MathLibrary/CQuaternion.h>
 

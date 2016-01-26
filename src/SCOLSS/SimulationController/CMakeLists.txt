@@ -1,19 +1,20 @@
 set(CORE_SIMULATOR_HEADERS
-        ${CORE_SIMULATOR_DIR}/CBaseSimCtrl.h
-        ${CORE_SIMULATOR_DIR}/CBaseSimParams.h
-        ${CORE_SIMULATOR_DIR}/CMonteCarloSimParams.h
-        ${CORE_SIMULATOR_DIR}/CMonteCarloSimCtrl.h
-        ${CORE_SIMULATOR_DIR}/CLangevinSimParams.h
-        ${CORE_SIMULATOR_DIR}/CLangevinSimCtrl.h
+        ${CORE_SIMULATOR_DIR}/BaseSimCtrl/CBaseSimCtrl.h
+        ${CORE_SIMULATOR_DIR}/BaseSimCtrl/CBaseSimParams.h
+        ${CORE_SIMULATOR_DIR}/MonteCarloSimCtrl/CMonteCarloSimParams.h
+        ${CORE_SIMULATOR_DIR}/MonteCarloSimCtrl/CMonteCarloSimCtrl.h
+        ${CORE_SIMULATOR_DIR}/LangevinSimCtrl/CLangevinSimParams.h
+        ${CORE_SIMULATOR_DIR}/LangevinSimCtrl/CLangevinSimCtrl.h
         )
 
 set(CORE_SIMULATOR_SOURCES
-        CBaseSimCtrl.cpp
-        CBaseSimParams.cpp
-        CLangevinSimCtrl.cpp
-        CLangevinSimParams.cpp
-        CMonteCarloSimParams.cpp
-        CMonteCarloSimCtrl.cpp)
+        BaseSimCtrl/CBaseSimCtrl.cpp
+        BaseSimCtrl/CBaseSimParams.cpp
+        MonteCarloSimCtrl/CMonteCarloSimParams.cpp
+        MonteCarloSimCtrl/CMonteCarloSimCtrl.cpp
+        LangevinSimCtrl/CLangevinSimCtrl.cpp
+        LangevinSimCtrl/CLangevinSimParams.cpp
+        )
 
 setup_headers("${CORE_SIMULATOR_HEADERS}" "${CORE_SIMULATOR_DIR}")
 
