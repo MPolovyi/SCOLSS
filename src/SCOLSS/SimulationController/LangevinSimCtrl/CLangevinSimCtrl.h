@@ -25,15 +25,11 @@ public:
     std::normal_distribution<double> translationNormalDistribution;
     std::normal_distribution<double> rotationNormalDistribution;
 
-    virtual CLangevinSimParams& GetSimulationParameters() {
-        return SimulationParameters;
-    }
-
     template<class Archive>
     void save(Archive &archieve) const {
         archieve(cereal::base_class<CBaseSimCtrl>(this));
+        archieve(cereal::make_nvp("SimulationParameters", SimulationParameters));
         archieve(cereal::make_nvp("SimulationTime", GetSimulationTime()));
-        std::cout << "Saving LD class" << std::endl;
     }
 
     CLangevinSimCtrl(CLangevinSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
@@ -85,10 +81,7 @@ public:
 
     double GetSimulationTime() const;
 
-    std::vector<CYukawaDipolePt> particles_old;
-    std::vector<CYukawaDipolePt> particles_new;
 protected:
-
     double GetAverageDispl() const;
 
     double GetAverAngularDispl() const;

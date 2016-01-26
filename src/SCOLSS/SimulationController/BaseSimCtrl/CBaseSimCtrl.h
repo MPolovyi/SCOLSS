@@ -12,8 +12,10 @@
 #include <fstream>
 
 #include <cereal/cereal.hpp>
+#include <cereal/types/vector.hpp>
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/json.hpp>
+
 
 #include <SCOLSS/EPSPlot/EPSPlot.h>
 
@@ -27,10 +29,6 @@ public:
     unsigned long Cycles;
 
     CBaseSimParams SimulationParameters;
-
-    virtual CBaseSimParams & GetSimulationParameters() {
-        return SimulationParameters;
-    };
 
     std::chrono::time_point<std::chrono::system_clock> initialize_time;
 
@@ -51,16 +49,17 @@ public:
         archieve(cereal::make_nvp("PotentialEnergy", GetAveragePotentialEnergy()));
 
         {
-            std::vector<CParticleBase> pts_save;
-            for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
-                pts_save.push_back(particles_old[i]);
-            }
+//            std::vector<CParticleBase> pts_save;
+//            for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
+//                pts_save.push_back(particles_old[i]);
+//            }
+//
+//            const CParticleBase *tmp = &pts_save[0];
+//            archieve.saveBinaryValue(tmp, sizeof(CParticleBase) * particles_old.size(), "Particles");
 
-            const CParticleBase *tmp = &pts_save[0];
-            archieve.saveBinaryValue(tmp, sizeof(CParticleBase) * particles_old.size(), "Particles");
+            auto tmp = GetParticleCoordinatesZ();
+            archieve(cereal::make_nvp("Particles", tmp));
         }
-
-        std::cout << "SaveBase" << std::endl;
     };
 
     CBaseSimCtrl(CBaseSimParams d);

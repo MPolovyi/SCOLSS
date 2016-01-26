@@ -55,7 +55,6 @@ public:
         archive(cereal::make_nvp("KbT", KbT));
         archive(cereal::make_nvp("PtCount", PtCount));
         archive(cereal::make_nvp("InitialConfiguration", InitialConfiguration));
-        archive(cereal::make_nvp("CyclesBetweenSaves", CyclesBetweenSaves));
     }
 
     template<class Archive>

@@ -22,29 +22,21 @@ class CMonteCarloSimCtrl : public CBaseSimCtrl {
 public:
     CMonteCarloSimParams SimulationParameters;
 
-    CMonteCarloSimCtrl(CMonteCarloSimParams d) : CBaseSimCtrl(d), SimulationParameters(d), particles(particles_old) {
+    CMonteCarloSimCtrl(CMonteCarloSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
         int i = 1;
     };
-
-    virtual CMonteCarloSimParams& GetSimulationParameters() {
-        return SimulationParameters;
-    }
 
     template<class Archive>
     void save(Archive &archieve) const {
         archieve(cereal::base_class<CBaseSimCtrl>(this));
-
+        archieve(cereal::make_nvp("SimulationParameters", SimulationParameters));
         archieve(cereal::make_nvp("SimulationCycles", Cycles));
-
-        std::cout << "Saving MC class" << std::endl;
     }
 
     std::uniform_real_distribution<double> uniformDistributionAcceptance;
     std::uniform_real_distribution<double> uniformDistributionMove;
 
 protected:
-    std::vector<CYukawaDipolePt>& particles;
-
     double oldParticleCoordinates;
     CQuaternion oldParticleRotation;
 

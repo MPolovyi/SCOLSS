@@ -11,10 +11,26 @@
 #include <SCOLSS/SimulationController/LangevinSimCtrl/CLangevinSimParams.h>
 #include <SCOLSS/SimulationController/LangevinSimCtrl/CLangevinSimCtrl.h>
 
+#include <SCOLSS/ParticlePhysics/CYukawaDipolePt.h>
+
 void RunSimulations(int argc, char **argv);
-void RunSimulations(std::shared_ptr<CBaseSimCtrl> contr, cereal::JSONOutputArchive &outputArchive, EPSPlot &pictureSaver);
+void RunSimulations(std::shared_ptr<CBaseSimCtrl> contr, std::string &mainSaveFileName, EPSPlot &pictureSaver);
+
+void SaveToFile(const std::shared_ptr<CBaseSimCtrl> &contr, const std::string &mainSaveFileName, uint64_t cycle);
 
 int main(int argc, char **argv) {
+    CYukawaDipolePt pt1(1000, 10, 10);
+    CYukawaDipolePt pt2(1000, 10, 10);
+    pt1.Coordinates = 4;
+    pt2.Coordinates = 5;
+    pt2.Rotation = CQuaternion(M_PI_2, CVector::AxisY);
+
+    auto tmp = pt1.GetPotentialEnergy(pt2, pt2.GetDistanceLeft(pt1, 10));
+    std::cout << tmp << std::endl;
+
+    tmp = pt2.GetPotentialEnergy(pt1, pt1.GetDistanceRight(pt2, 10));
+    std::cout << tmp << std::endl;
+
     RunSimulations(argc, argv);
 }
 
@@ -35,13 +51,13 @@ void RunSimulations(int argc, char **argv) {
             case MonteCarlo: {
                 CMonteCarloSimParams data;
                 simDataArchieve(data);
-                sim = std::make_shared<CBaseSimCtrl>(CMonteCarloSimCtrl(data));
+                sim = std::make_shared<CMonteCarloSimCtrl>(CMonteCarloSimCtrl(data));
                 break;
             };
             case LangevinDynamics: {
                 CLangevinSimParams data;
                 simDataArchieve(data);
-                sim = std::make_shared<CBaseSimCtrl>(CLangevinSimCtrl(data));
+                sim = std::make_shared<CLangevinSimCtrl>(CLangevinSimCtrl(data));
                 break;
             };
         }
@@ -49,53 +65,55 @@ void RunSimulations(int argc, char **argv) {
         std::stringstream ssMainSaveFileName;
 
         ssMainSaveFileName << "Results_" << i << fname;
-
         std::string mainSaveFileName = ssMainSaveFileName.str();
-        std::fstream mainSaveFileStream(mainSaveFileName.c_str(), std::fstream::out);
-        cereal::JSONOutputArchive mainSaveFileArchieve(mainSaveFileStream);
 
         std::string pictureSaveFileName = "Picture_" + fname + ".eps";
 
         EPSPlot savePictureFile(pictureSaveFileName.c_str(),
                                 0,
                                 0,
-                                sim->GetSimulationParameters().GetEpsDimensionX(),
-                                sim->GetSimulationParameters().GetEpsDimensionY());
+                                sim->SimulationParameters.GetEpsDimensionX(),
+                                sim->SimulationParameters.GetEpsDimensionY());
 
-        RunSimulations(sim, mainSaveFileArchieve, savePictureFile);
+        RunSimulations(sim, mainSaveFileName, savePictureFile);
         std::cout << i << std::endl;
     }
 }
 
-void RunSimulations(std::shared_ptr<CBaseSimCtrl> contr, cereal::JSONOutputArchive &outputArchive, EPSPlot &pictureSaver) {
-    outputArchive.makeArray();
-
-    outputArchive(contr);
+void RunSimulations(std::shared_ptr<CBaseSimCtrl> contr, std::string &mainSaveFileName, EPSPlot &pictureSaver) {
+    SaveToFile(contr, mainSaveFileName, 0);
 
     contr->SaveIntoEps(pictureSaver);
     std::chrono::time_point<std::chrono::system_clock> start_time, step_time;
     start_time = std::chrono::system_clock::now();
     uint64_t prev_measure = 0;
 
-    uint64_t totalCycles = contr->GetSimulationParameters().CyclesBetweenSaves * contr->GetSimulationParameters().NumberOfSavePoints;
+    uint64_t totalCycles = contr->SimulationParameters.CyclesBetweenSaves * contr->SimulationParameters.NumberOfSavePoints;
 
-    size_t k = 1;
     for (uint64_t cycle = 1; cycle <= totalCycles; ++cycle) {
         contr->DoCycle();
 
-        if (0 == cycle % (contr->GetSimulationParameters().CyclesBetweenSaves)) {
-            outputArchive(contr);
+        if (0 == cycle % (contr->SimulationParameters.CyclesBetweenSaves)) {
+            SaveToFile(contr, mainSaveFileName, cycle);
         }
 
-        if (0 == cycle % (totalCycles / contr->GetSimulationParameters().NumberOfImageLines)) {
+        if (0 == cycle % (totalCycles / contr->SimulationParameters.NumberOfImageLines)) {
             contr->SaveIntoEps(pictureSaver);
         }
 
         auto doFinish = contr->PrintTimeExtrapolation(start_time, prev_measure, totalCycles, cycle);
         if (doFinish) {
-            outputArchive(contr);
+            SaveToFile(contr, mainSaveFileName, cycle);
+
             contr->SaveIntoEps(pictureSaver);
             break;
         }
     }
+}
+
+void SaveToFile(const std::shared_ptr<CBaseSimCtrl> &contr, const std::string &mainSaveFileName, uint64_t cycle) {
+    std::fstream saveFileStream((mainSaveFileName + std::to_string(cycle)).c_str(), std::ios_base::out);
+    cereal::JSONOutputArchive saveFileArchieve(saveFileStream);
+
+    saveFileArchieve(contr);
 }
