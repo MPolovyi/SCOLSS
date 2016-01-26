@@ -18,7 +18,7 @@ set(CORE_SIMULATOR_SOURCES
 
 setup_headers("${CORE_SIMULATOR_HEADERS}" "${CORE_SIMULATOR_DIR}")
 
-add_library(CoreSimulatorLibrary STATIC "${CORE_SIMULATOR_SOURCES}")
-setup_custom_target(CoreSimulatorLibrary "${SRC_ROOT_DIR}${CORE_SIMULATOR_DIR}")
+add_library(CoreSimulatorLibrary STATIC ${CORE_SIMULATOR_SOURCES})
+setup_custom_target(CoreSimulatorLibrary ${SRC_ROOT_DIR}${CORE_SIMULATOR_DIR})
 
 target_link_libraries(CoreSimulatorLibrary EPSPlotLibrary MathLibrary ParticlePhysLibrary)
