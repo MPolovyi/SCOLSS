@@ -33,6 +33,7 @@ public:
     }
 
     CLangevinSimCtrl(CLangevinSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
+        InitRandomGenerator();
         int i = 1;
     }
 

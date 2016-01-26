@@ -131,9 +131,8 @@ void CBaseSimCtrl::SaveIntoEps(EPSPlot &outFile) {
             colB = 1;
         }
 
-        outFile.drawPoint((float) pt.Coordinates,
+        outFile.drawParticle((float) pt.Coordinates,
                           (float) (epsLine * SimulationParameters.ParticleDiameter),
-                          (float) SimulationParameters.ParticleDiameter,
                           colR, colG, colB);
     }
 }

@@ -13,7 +13,7 @@
 
 #include <SCOLSS/ParticlePhysics/CYukawaDipolePt.h>
 
-void RunSimulations(int argc, char **argv);
+void InitializeSimulations(int argc, char **argv);
 void RunSimulations(std::shared_ptr<CBaseSimCtrl> contr, std::string &mainSaveFileName, EPSPlot &pictureSaver);
 
 void SaveToFile(const std::shared_ptr<CBaseSimCtrl> &contr, const std::string &mainSaveFileName, uint64_t cycle);
@@ -31,12 +31,20 @@ int main(int argc, char **argv) {
     tmp = pt2.GetPotentialEnergy(pt1, pt1.GetDistanceRight(pt2, 10));
     std::cout << tmp << std::endl;
 
-    RunSimulations(argc, argv);
+    InitializeSimulations(argc, argv);
 }
 
-void RunSimulations(int argc, char **argv) {
+void InitializeSimulations(int argc, char **argv) {
     std::string simType = argv[2];
-    ESimulationType simT = (ESimulationType)std::stoi(simType);
+    ESimulationType simT;
+    if(simType == "MC"){
+        simT = ESimulationType::MonteCarlo;
+    } else if (simType == "LD"){
+        simT = ESimulationType::LangevinDynamics;
+    } else {
+        std::cout << "Unknown simulation type. Exiting." << std::endl;
+        return;
+    }
 
     std::string samples = argv[3];
     for(int i = 1; i <= std::stoi(samples); i++) {
@@ -74,6 +82,7 @@ void RunSimulations(int argc, char **argv) {
                                 0,
                                 sim->SimulationParameters.GetEpsDimensionX(),
                                 sim->SimulationParameters.GetEpsDimensionY());
+        savePictureFile.initParticleSavings(sim->SimulationParameters.ParticleDiameter);
 
         RunSimulations(sim, mainSaveFileName, savePictureFile);
         std::cout << i << std::endl;

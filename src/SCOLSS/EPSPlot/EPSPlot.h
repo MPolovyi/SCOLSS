@@ -179,7 +179,7 @@ public:
 		printFloatAndSpace(red);
 		printFloatAndSpace(green);
 		printFloatAndSpace(blue);
-		printString("setrgbcolor\n");
+		printString("col\n");
 	}
 
 	// Set line width
@@ -504,29 +504,37 @@ public:
 		delete[] newy;
 	}
 
-    void drawPoint(float x, float y, float radius, float red = 1, float green = 1, float blue = 1) {
-        gSave();
+	void initParticleSavings(float ptDiameter){
+		printString("/d {");
+		printFloat(ptDiameter/2);
+		printString("} def\n");
+	}
 
-		setLineCap(EPSPlot::LineCap::RoundCap);
-        setLineWidth(radius);
+	void drawParticle(float x, float y, float red = 1, float green = 1, float blue = 1) {
+		setRGBColor(red, green, blue);
+		printFloatAndSpace(x);
+		printFloatAndSpace(y);
+		printString("d pt\n");
+	}
+
+    void drawPoint(float x, float y, float diameter, float red = 1, float green = 1, float blue = 1) {
+		gSave();
         setRGBColor(red, green, blue);
-        drawLine(x, y, x, y);
-
-        gRestore();
+		printFloatAndSpace(x);
+		printFloatAndSpace(y);
+		printFloatAndSpace(diameter/2);
+		printString(" pt\n");
+		gRestore();
     }
 
-    void drawCircle(float x, float y, float radius, float lwd, float red = 1, float green = 1, float blue = 1){
+    void drawCircle(float x, float y, float radius, float lwd, float red = 1, float green = 1, float blue = 1) {
         gSave();
-        setLineWidth(lwd);
-        setRGBColor(red, green, blue);
-        float angle = 0;
-        while (angle < M_PI*2){
-            float x_beg = x+radius*cosf(angle);
-            float y_beg = y+radius*sinf(angle);
-            angle += 0.01;
 
-            drawLine(x_beg, y_beg, x+radius*cosf(angle), y+radius*(sinf(angle)));
-        }
+		setRGBColor(red, green, blue);
+		printFloatAndSpace(x);
+		printFloatAndSpace(y);
+		printFloatAndSpace(radius);
+		printString("0 360 arc\n");
 
         gRestore();
     }
@@ -568,6 +576,9 @@ public:
 		printFloatAndSpace(x2);
 		printFloat(y2);
 		printString("\n");
+		printString("/bd {bind def} bind def\n");
+		printString("/col {setrgbcolor} bd\n");
+		printString("/pt { 0 360 arc fill } def\n");
 		fontsize = 0;
 	}
 

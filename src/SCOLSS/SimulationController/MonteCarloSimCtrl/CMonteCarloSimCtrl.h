@@ -23,6 +23,7 @@ public:
     CMonteCarloSimParams SimulationParameters;
 
     CMonteCarloSimCtrl(CMonteCarloSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
+        InitRandomGenerator();
         int i = 1;
     };
 
