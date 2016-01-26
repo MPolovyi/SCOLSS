@@ -89,7 +89,7 @@ CVector CLangevinSimCtrl::GetTorqueNew(size_t ptIndex) {
 
 }
 
-double CLangevinSimCtrl::GetAverageKineticEnergy() {
+double CLangevinSimCtrl::GetAverageKineticEnergy() const {
     double ret = 0;
 
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
@@ -102,7 +102,7 @@ double CLangevinSimCtrl::GetAverageKineticEnergy() {
     return ret/SimulationParameters.PtCount;
 }
 
-double CLangevinSimCtrl::GetRotationalEnergy() {
+double CLangevinSimCtrl::GetRotationalEnergy() const {
     double ret = 0;
 
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
@@ -114,7 +114,7 @@ double CLangevinSimCtrl::GetRotationalEnergy() {
     return ret;
 }
 
-double CLangevinSimCtrl::GetTranslationalEnergy() {
+double CLangevinSimCtrl::GetTranslationalEnergy() const {
     double ret = 0;
 
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {

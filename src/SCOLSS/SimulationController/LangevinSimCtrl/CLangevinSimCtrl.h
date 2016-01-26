@@ -30,6 +30,7 @@ public:
         archieve(cereal::base_class<CBaseSimCtrl>(this));
         archieve(cereal::make_nvp("SimulationParameters", SimulationParameters));
         archieve(cereal::make_nvp("SimulationTime", GetSimulationTime()));
+        archieve(cereal::make_nvp("KineticEnergy", GetAverageKineticEnergy()));
     }
 
     CLangevinSimCtrl(CLangevinSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
@@ -74,11 +75,11 @@ public:
 
     CVector GetTorqueNew(size_t ptIndex);
 
-    double GetAverageKineticEnergy();
+    double GetAverageKineticEnergy() const;
 
-    double GetRotationalEnergy();
+    double GetRotationalEnergy() const;
 
-    double GetTranslationalEnergy();
+    double GetTranslationalEnergy() const;
 
     double GetSimulationTime() const;
 

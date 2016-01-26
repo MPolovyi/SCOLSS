@@ -14,7 +14,7 @@
 #include <SCOLSS/ParticlePhysics/CYukawaDipolePt.h>
 
 void InitializeSimulations(int argc, char **argv);
-void RunSimulations(std::shared_ptr<CBaseSimCtrl> contr, std::string &mainSaveFileName, EPSPlot &pictureSaver);
+void RunSimulations(std::shared_ptr<CBaseSimCtrl> sim, std::string &mainSaveFileName, EPSPlot &pictureSaver);
 
 void SaveToFile(const std::shared_ptr<CBaseSimCtrl> &contr, const std::string &mainSaveFileName, uint64_t cycle);
 
@@ -82,6 +82,7 @@ void InitializeSimulations(int argc, char **argv) {
                                 0,
                                 sim->SimulationParameters.GetEpsDimensionX(),
                                 sim->SimulationParameters.GetEpsDimensionY());
+
         savePictureFile.initParticleSavings(sim->SimulationParameters.ParticleDiameter);
 
         RunSimulations(sim, mainSaveFileName, savePictureFile);
@@ -89,32 +90,32 @@ void InitializeSimulations(int argc, char **argv) {
     }
 }
 
-void RunSimulations(std::shared_ptr<CBaseSimCtrl> contr, std::string &mainSaveFileName, EPSPlot &pictureSaver) {
-    SaveToFile(contr, mainSaveFileName, 0);
+void RunSimulations(std::shared_ptr<CBaseSimCtrl> sim, std::string &mainSaveFileName, EPSPlot &pictureSaver) {
+    SaveToFile(sim, mainSaveFileName, 0);
 
-    contr->SaveIntoEps(pictureSaver);
+    sim->SaveIntoEps(pictureSaver);
     std::chrono::time_point<std::chrono::system_clock> start_time, step_time;
     start_time = std::chrono::system_clock::now();
     uint64_t prev_measure = 0;
 
-    uint64_t totalCycles = contr->SimulationParameters.CyclesBetweenSaves * contr->SimulationParameters.NumberOfSavePoints;
-
+    uint64_t totalCycles = sim->SimulationParameters.CyclesBetweenSaves * sim->SimulationParameters.NumberOfSavePoints;
+    sim->SimulationParameters.NumberOfImageLines = std::min(totalCycles, sim->SimulationParameters.NumberOfImageLines);
     for (uint64_t cycle = 1; cycle <= totalCycles; ++cycle) {
-        contr->DoCycle();
+        sim->DoCycle();
 
-        if (0 == cycle % (contr->SimulationParameters.CyclesBetweenSaves)) {
-            SaveToFile(contr, mainSaveFileName, cycle);
+        if (0 == cycle % (sim->SimulationParameters.CyclesBetweenSaves)) {
+            SaveToFile(sim, mainSaveFileName, cycle);
         }
 
-        if (0 == cycle % (totalCycles / contr->SimulationParameters.NumberOfImageLines)) {
-            contr->SaveIntoEps(pictureSaver);
+        if (0 == cycle % (totalCycles / sim->SimulationParameters.NumberOfImageLines)) {
+            sim->SaveIntoEps(pictureSaver);
         }
 
-        auto doFinish = contr->PrintTimeExtrapolation(start_time, prev_measure, totalCycles, cycle);
+        auto doFinish = sim->PrintTimeExtrapolation(start_time, prev_measure, totalCycles, cycle);
         if (doFinish) {
-            SaveToFile(contr, mainSaveFileName, cycle);
+            SaveToFile(sim, mainSaveFileName, cycle);
 
-            contr->SaveIntoEps(pictureSaver);
+            sim->SaveIntoEps(pictureSaver);
             break;
         }
     }

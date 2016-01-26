@@ -107,7 +107,8 @@ public:
     }
 
     double GetEpsDimensionY() {
-        return ParticleDiameter * NumberOfImageLines;
+        uint64_t totalCycles = CyclesBetweenSaves * NumberOfSavePoints;
+        return std::min(ParticleDiameter * totalCycles, ParticleDiameter * NumberOfImageLines);
     }
 
 protected:
