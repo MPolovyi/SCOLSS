@@ -1,0 +1,16 @@
+{
+  "value0": {
+    "Base": {
+      "Density": 0.85,
+      "InitialConfiguration": 0,
+      "KbT": 1,
+      "LoadSavedState": 0,
+      "NumberOfSavePoints": 1000,
+      "NumberOfImageLines": 1000,
+      "PtCount": 500,
+      "SavedParticles": ""
+    },
+    "CyclesBetweenSaves": 10,
+    "TimeBetweenSaves": 0.1
+  }
+}
