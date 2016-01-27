@@ -24,12 +24,19 @@ public:
             SystemSize(_systemSize),
             HalfSystemSize(_systemSize / 2.0)
     {
-        Rotation = _Rotation;
+        SetRotation(_Rotation);
         Velocity = 0;
         Coordinates = 0;
         ForceRandom = 0;
         ForceOld = 0;
     }
+
+    void SetRotation(CQuaternion nRotation) {
+        Rotation = nRotation;
+        Orientation = CParticleBase::GetOrientation();
+    }
+
+    CVector Orientation;
 
     CVector AngularVelocity;
     double Velocity;

@@ -14,7 +14,7 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
 
         switch (SimulationParameters.InitialConfiguration) {
             case EInitialConfiguration::Random: {
-                pt.Rotation = GetRandomUnitQuaternion();
+                pt.SetRotation(GetRandomUnitQuaternion());
                 pt.Coordinates = i > 0
                                  ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
                                    initialDisplacementDistribution(rnd_gen)
@@ -23,13 +23,13 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
             }
 
             case EInitialConfiguration::RandomUnmoving: {
-                pt.Rotation = GetRandomUnitQuaternion();
+                pt.SetRotation(GetRandomUnitQuaternion());
                 pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
                 break;
             }
 
             case EInitialConfiguration::Aligned: {
-                pt.Rotation = CQuaternion(0, CVector::AxisZ);
+                pt.SetRotation(CQuaternion(0, CVector::AxisZ));
                 pt.Coordinates = i > 0
                                  ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
                                    initialDisplacementDistribution(rnd_gen)
@@ -38,7 +38,7 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
             }
 
             case EInitialConfiguration::AlignedTwoSides: {
-                pt.Rotation = CQuaternion(M_PI * (i % 2), CVector::AxisY);
+                pt.SetRotation(CQuaternion(M_PI * (i % 2), CVector::AxisY));
                 pt.Coordinates = i > 0
                                  ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
                                    initialDisplacementDistribution(rnd_gen)
@@ -47,7 +47,7 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
             }
 
             case EInitialConfiguration::AlingnedUnmoving: {
-                pt.Rotation = CQuaternion(M_PI * (i % 2), CVector::AxisY);
+                pt.SetRotation(CQuaternion(M_PI * (i % 2), CVector::AxisY));
                 pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
                 break;
             }
@@ -102,7 +102,7 @@ double CBaseSimCtrl::GetAveragePotentialEnergy() const {
 
 void CBaseSimCtrl::SaveForPovray(std::fstream &ofstr) {
     for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
-        auto rot = particles_old[i].GetOrientation();
+        auto rot = particles_old[i].Orientation;
         ofstr
         << "Colloid(<0, 0, "
         << particles_old[i].Coordinates / SimulationParameters.ParticleDiameter
@@ -115,7 +115,7 @@ void CBaseSimCtrl::SaveIntoEps(EPSPlot &outFile) {
     epsLine++;
     for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
         auto &pt = particles_old[i];
-        auto orient = pt.GetOrientation();
+        auto orient = pt.Orientation;
 
         float colR;
         float colG;
@@ -180,7 +180,7 @@ std::vector<double> CBaseSimCtrl::GetParticlesOrientationZ() const {
     std::vector<double> ret;
 
     for (auto &pt : particles_old) {
-        ret.push_back(pt.GetOrientation().Z);
+        ret.push_back(pt.Orientation.Z);
     }
 
     return ret;

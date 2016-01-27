@@ -49,7 +49,7 @@ void CLangevinSimCtrl::RotateParticleVerlet(size_t ptIndex) {
             (2 * SimulationParameters.Inertia)
     };
 
-    pt_new.Rotation = pt_old.GetRotationFromVelocity(av, SimulationParameters.TimeStep);
+    pt_new.SetRotation(pt_old.GetRotationFromVelocity(av, SimulationParameters.TimeStep));
 
     pt_new.AngularDisplacement = pt_old.AngularDisplacement + CYukawaDipolePt::GetRotationDistance(pt_new, pt_old);
 }

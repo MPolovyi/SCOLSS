@@ -92,11 +92,11 @@ def populateData(simData, run_all_file_lines):
                                       "#$ -l virtual_free=500M -l h_vmem=800M \n",
                                       "#$ -q SHORT\n",
                                       "\n",
-                                      "cp $SGE_O_WORKDIR//ColloidMD $TMPDIR\n",
+                                      "cp $SGE_O_WORKDIR//ExecFile $TMPDIR\n",
                                       "cp $SGE_O_WORKDIR//Data_" + run_index_string + ".json" + " $TMPDIR\n",
                                       "\n",
                                       "cd $TMPDIR\n",
-                                      "(time .//ExecFile Data_" + run_index_string + ".json" + "MC " + str(samplesPerRunCount) + " >&time_" + run_index_string + ".txt\n",
+                                      "(time .//ExecFile Data_" + run_index_string + ".json" + " MC " + str(samplesPerRunCount) + " >&time_" + run_index_string + ".txt\n",
                                       "cp * $SGE_O_WORKDIR//\n",
                                       "rm *\n"]
 
@@ -119,12 +119,12 @@ simData = {
         "InitialConfiguration": 1,
         "KbT": [1],
         "LoadSavedState": 0,
-        "NumberOfSavePoints": 50,
+        "NumberOfSavePoints": 20,
         "NumberOfImageLines": 1000,
         "PtCount": [5000],
         "SavedParticles": ""
     },
-    "CyclesBetweenSaves": 10,
+    "CyclesBetweenSaves": 200000,
     "TimeBetweenSaves": 0.05
 }
 

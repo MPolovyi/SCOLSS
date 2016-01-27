@@ -23,12 +23,12 @@ int main(int argc, char **argv) {
     CYukawaDipolePt pt2(1000, 10, 10);
     pt1.Coordinates = 4;
     pt2.Coordinates = 5;
-    pt2.Rotation = CQuaternion(M_PI_2, CVector::AxisY);
+    pt2.SetRotation(CQuaternion(0, CVector::AxisY));
 
-    auto tmp = pt1.GetPotentialEnergy(pt2, pt2.GetDistanceLeft(pt1, 10));
+    auto tmp = pt1.GetForceFromOtherTheoretically(pt2, pt2.GetDistanceLeft(pt1, 10));
     std::cout << tmp << std::endl;
 
-    tmp = pt2.GetPotentialEnergy(pt1, pt1.GetDistanceRight(pt2, 10));
+    tmp = pt2.GetForceFromOtherTheoretically(pt1, pt1.GetDistanceRight(pt2, 10));
     std::cout << tmp << std::endl;
 
     InitializeSimulations(argc, argv);

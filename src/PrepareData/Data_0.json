@@ -5,12 +5,12 @@
       "InitialConfiguration": 1,
       "KbT": 1,
       "LoadSavedState": 0,
-      "NumberOfSavePoints": 50,
       "NumberOfImageLines": 1000,
-      "PtCount": 5000,
+      "NumberOfSavePoints": 20,
+      "PtCount": 3200,
       "SavedParticles": ""
     },
-    "CyclesBetweenSaves": 10,
+    "CyclesBetweenSaves": 200000,
     "TimeBetweenSaves": 0.05
   }
 }

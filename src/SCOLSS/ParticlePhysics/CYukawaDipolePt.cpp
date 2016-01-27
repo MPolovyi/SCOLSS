@@ -18,7 +18,7 @@ double CYukawaDipolePt::GetPotentialEnergy(const CYukawaDipolePt &other, CVector
     //Yukawa field is directed along the dr vector. But since it's one dimensional case, let's leave it as it is.
     //for 3D case replace .Z with Length()??
 
-    return GetYukawaPotentialFromOther(other, dr) - GetOrientation().DotProduct(GetDipoleFieldFromOther(other, dr));
+    return GetYukawaPotentialFromOther(other, dr) - Orientation.DotProduct(GetDipoleFieldFromOther(other, dr));
 }
 
 double CYukawaDipolePt::GetYukawaPotentialFromOther(const CYukawaDipolePt &other, CVector dr_from_other) const {
@@ -32,7 +32,7 @@ CVector CYukawaDipolePt::GetDipoleFieldFromOther(const CYukawaDipolePt &other, C
     double dist = dr_from_other.GetLength();
     dr_from_other.Normalize();
 
-    CVector other_orientation = other.GetOrientation();
+    CVector other_orientation = other.Orientation;
 
     auto Dipole = (3 * other_orientation.DotProduct(dr_from_other) * dr_from_other - other_orientation) / (dist * dist * dist);
 
@@ -45,7 +45,7 @@ CVector CYukawaDipolePt::GetTorqueFromOther(const CYukawaDipolePt &other_left, c
 }
 
 CVector CYukawaDipolePt::GetTorqueFromOther(const CYukawaDipolePt &other, CVector dr_from_other) const {
-    return GetOrientation().CrossProduct(GetDipoleFieldFromOther(other, dr_from_other));
+    return Orientation.CrossProduct(GetDipoleFieldFromOther(other, dr_from_other));
 }
 
 double CYukawaDipolePt::GetForceFromOther(const CYukawaDipolePt &other_left, const CYukawaDipolePt &other_right) const {
@@ -54,8 +54,8 @@ double CYukawaDipolePt::GetForceFromOther(const CYukawaDipolePt &other_left, con
 }
 
 double CYukawaDipolePt::GetForceFromOtherTheoretically(const CYukawaDipolePt &other, CVector dr_from_other) const {
-    CVector orientation = GetOrientation();
-    CVector other_orientation = other.GetOrientation();
+    CVector orientation = Orientation;
+    CVector other_orientation = other.Orientation;
 
     double dist = dr_from_other.GetLength();
 
@@ -80,8 +80,8 @@ CQuaternion CYukawaDipolePt::GetRotationFromVelocity(std::vector<CVector> angVel
 }
 
 //double CYukawaDipolePt::GetPotentialEnergy(const CYukawaDipolePt &other) const {
-//    const CVector &orientation = GetOrientation();
-//    const CVector &other_orientation = other.GetOrientation();
+//    const CVector &orientation = Orientation;
+//    const CVector &other_orientation = other.Orientation;
 //    return GetPotentialEnergy(Coordinates, orientation, other.Coordinates, other_orientation);
 //}
 

@@ -11,16 +11,16 @@
 class CParticleBase {
 public:
     double Coordinates;
-    CQuaternion Rotation;
 
-    CVector GetOrientation() const {
-        return ToGlobalSpace(CVector(0, 0, 1));
-    };
+    CQuaternion GetRotation() const {
+        return Rotation;
+    }
 
-    CVector ToGlobalSpace(CVector vector, const CQuaternion *otherRotatation = nullptr) const {
-        if (otherRotatation)
-            return (*otherRotatation) * vector * otherRotatation->GetInverse();
+    void SetRotation(CQuaternion nRotation) {
+        Rotation = nRotation;
+    }
 
+    CVector ToGlobalSpace(CVector vector) const {
         return Rotation * vector * Rotation.GetInverse();
     };
 
@@ -41,6 +41,12 @@ public:
 
         return dr;
     }
+protected:
+    CVector GetOrientation() const {
+        return ToGlobalSpace(CVector(0, 0, 1));
+    };
+
+    CQuaternion Rotation;
 };
 
 
