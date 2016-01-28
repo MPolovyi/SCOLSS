@@ -41,11 +41,11 @@ public:
 
         return dr;
     }
-protected:
+
     CVector GetOrientation() const {
         return ToGlobalSpace(CVector(0, 0, 1));
     };
-
+protected:
     CQuaternion Rotation;
 };
 

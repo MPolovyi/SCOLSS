@@ -11,19 +11,19 @@
 
 class CQuaternion {
 public:
-    double W;
-
     CVector V;
 
-    CQuaternion() : W(1), V(CVector()) { }
+    double W;
+
+    CQuaternion() : V(CVector()), W(1) { }
 
     CQuaternion(double angle, const CVector &axis);
 
-    CQuaternion(const CQuaternion &other) : W(other.W), V(other.V) { };
+    CQuaternion(const CQuaternion &other) : V(other.V), W(other.W) { };
 
-    CQuaternion(double w, double x, double y, double z) : W(w), V(x, y, z) { };
+    CQuaternion(double w, double x, double y, double z) : V(x, y, z), W(w) { };
 
-    explicit CQuaternion(const CVector &other) : W(V.W), V(other) { }
+    explicit CQuaternion(const CVector &other) : V(other), W(other.W) { }
 
     static CQuaternion GetRotationFromVectorToVector(const CVector &a, const CVector &b);
 
