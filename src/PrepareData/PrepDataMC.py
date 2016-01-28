@@ -77,7 +77,7 @@ def populateData(simData, run_all_file_lines):
                     simDataToSave["value0"]["Base"]["PtCount"] = ptc
                     simDataToSave["value0"]["Base"]["Density"] = rho
 
-                    folder_name = "T_" + str(simDataToSave["value0"]["TimeBetweenSaves"]) +\
+                    folder_name = "S_" + str(simDataToSave["value0"]["CyclesBetweenSaves"]) +\
                                   "_I_" + str(simDataToSave["value0"]["Base"]["InitialConfiguration"]) + \
                                   "_K_" + str(kbt) + "_P_" + str(ptc) + "_D_" + str(rho)
 
@@ -96,7 +96,7 @@ def populateData(simData, run_all_file_lines):
                                       "cp $SGE_O_WORKDIR//Data_" + run_index_string + ".json" + " $TMPDIR\n",
                                       "\n",
                                       "cd $TMPDIR\n",
-                                      "(time .//ExecFile Data_" + run_index_string + ".json" + " MC " + str(samplesPerRunCount) + " >&time_" + run_index_string + ".txt\n",
+                                      "(time .//ExecFile Data_" + run_index_string + ".json" + " MC " + str(samplesPerRunCount) + ") >&time_" + run_index_string + ".txt\n",
                                       "cp * $SGE_O_WORKDIR//\n",
                                       "rm *\n"]
 
