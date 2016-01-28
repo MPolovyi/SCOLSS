@@ -3,6 +3,7 @@ project(SCOLSS)
 set(MATH_DIR "${SCOLSS_ROOT_DIR}/MathLibrary")
 set(EXEC_DIR "${SCOLSS_ROOT_DIR}/ExecFile")
 set(PARTICLE_PHYS_DIR "${SCOLSS_ROOT_DIR}/ParticlePhysics")
+set(R_EXTENSION_DIR "${SCOLSS_ROOT_DIR}/RExtension")
 
 set(CORE_SIMULATOR_DIR "${SCOLSS_ROOT_DIR}/SimulationController")
 
@@ -13,7 +14,8 @@ set(SCOLSS_ROOT_DIR
         ${EXEC_DIR}
         ${PARTICLE_PHYS_DIR}
         ${EPS_PLOT_DIR}
-        ${CORE_SIMULATOR_DIR})
+        ${CORE_SIMULATOR_DIR}
+        ${R_EXTENSION_DIR})
 
 include_directories("${SOURCES_INCLUDE_ROOT_DIR}")
 include_directories("~/include")

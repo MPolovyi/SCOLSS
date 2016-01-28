@@ -3,14 +3,14 @@
     "Base": {
       "Density": 0.25,
       "InitialConfiguration": 1,
-      "KbT": 1,
+      "KbT": 0.4,
       "LoadSavedState": 0,
-      "NumberOfImageLines": 1000,
-      "NumberOfSavePoints": 20,
-      "PtCount": 3200,
+      "NumberOfImageLines": 5000,
+      "NumberOfSavePoints": 50,
+      "PtCount": 500,
       "SavedParticles": ""
     },
     "CyclesBetweenSaves": 200000,
-    "TimeBetweenSaves": 0.05
+    "TimeBetweenSaves": 10
   }
 }
