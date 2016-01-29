@@ -26,6 +26,8 @@ extern "C" void Function_GetCorrelations(char ** input_string,
                                          double* corr_lengths_out,
                                          double* _systemSize);
 
+extern "C" int Function_ChangeBinaryToBaseParticles(void * input_string, void * output_string, int ptCount);
+
 extern "C" void Function_GetParticleOrientationProbability(char ** input_string,
                                                            int*_ptCount,
                                                            int* corr_counts_out);

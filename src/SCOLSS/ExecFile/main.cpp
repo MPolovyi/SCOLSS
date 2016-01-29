@@ -19,26 +19,25 @@ void RunSimulations(std::shared_ptr<CBaseSimCtrl> sim, std::string &mainSaveFile
 void SaveToFile(const std::shared_ptr<CBaseSimCtrl> &contr, const std::string &mainSaveFileName, uint64_t cycle);
 
 int main(int argc, char **argv) {
-//    CYukawaDipolePt pt1(1000, 10, 10);
-//    CYukawaDipolePt pt2(1000, 10, 10);
-//    pt1.Coordinates = 4;
-//    pt2.Coordinates = 0;
-//    pt2.SetRotation(CQuaternion(0, CVector::AxisX));
-//
-//    std::cout << "Particle one " << pt1.Orientation << std::endl;
-//    std::cout << "Particle two " << pt2.Orientation << std::endl;
-//
-//    cereal::JSONOutputArchive arch(std::cout);
-//
-//    arch.saveBinaryValue((CParticleBase*)&pt2, sizeof(CParticleBase));
-//    arch.finishNode();
-//    auto tmp = pt1.GetForceFromOtherTheoretically(pt2, pt2.GetDistanceLeft(pt1, 10));
-//    std::cout << tmp << std::endl;
-//
-//    tmp = pt2.GetForceFromOtherTheoretically(pt1, pt1.GetDistanceRight(pt2, 10));
-//    std::cout << tmp << std::endl;
 
-    InitializeSimulations(argc, argv);
+
+    CVector vec = CVector::AxisZ;
+
+    CQuaternion rot = CQuaternion(0, CVector::AxisY);
+
+    CVector res = rot * vec * rot.GetInverse();
+
+    std::cout << vec << std::endl;
+    std::cout << rot << std::endl;
+
+    std::cout << res << std::endl;
+
+    CParticleBase pt;
+    pt.SetRotation(rot);
+    res = pt.GetOrientation();
+    std::cout << res;
+
+//    InitializeSimulations(argc, argv);
 }
 
 void InitializeSimulations(int argc, char **argv) {

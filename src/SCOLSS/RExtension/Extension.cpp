@@ -10,15 +10,11 @@
 #include <cmath>
 #include "math.h"
 
-#include <cstdlib>
-#include <iostream>
 #include <SCOLSS/ParticlePhysics/CParticleBase.h>
 
 #include "cereal/archives/json.hpp"
 #include "cereal/archives/binary.hpp"
 #include "cereal/types/vector.hpp"
-
-#include "PtInput.h"
 
 int get_next(int pt, int ptCount, int step) {
     pt += step;
@@ -99,31 +95,33 @@ extern "C" void Function_GetCorrelations(char ** input_string,
     }
 }
 
-class CNewQuaternion{
+class CWrongQuaternion {
 public:
-    double W;
     CVector V;
+    double W;
 };
-class CNewPtBase{
+class CWrongPtBase {
 public:
     double Coordinates;
-    CNewQuaternion Rotation;
+    CWrongQuaternion Rotation;
 };
 
-extern "C" int Function_ChangeBinaryToBaseParticles(void * input_string, int ptCount) {
+extern "C" int Function_ChangeBinaryToBaseParticles(void * input_string, void * output_string, int ptCount) {
     std::string input((char*)input_string);
     std::stringstream in_stream;
 
     in_stream << "{\"value0\": \"";
     in_stream << input;
     in_stream << "\"}";
-    cereal::JSONInputArchive arch(in_stream);
-    std::vector<CNewPtBase> particles;
 
+//    std::cout << in_stream.str() << std::endl;
+
+    cereal::JSONInputArchive arch(in_stream);
+    std::vector<CWrongPtBase> particles;
     for (int i = 0; i < ptCount; ++i) {
-        particles.push_back(CNewPtBase());
+        particles.push_back(CWrongPtBase());
     }
-    arch.loadBinaryValue(&particles[0], sizeof(CNewPtBase) * ptCount);
+    arch.loadBinaryValue(&particles[0], sizeof(CWrongPtBase) * ptCount);
 
     std::vector<CParticleBase> saveParticles;
     for (int i = 0; i < ptCount; ++i){
@@ -132,7 +130,7 @@ extern "C" int Function_ChangeBinaryToBaseParticles(void * input_string, int ptC
         CQuaternion newOrient;
         newOrient.W = particles[i].Rotation.W;
         newOrient.V = particles[i].Rotation.V;
-        pt.SetRotation(CQuaternion(newOrient);
+        pt.SetRotation(CQuaternion(newOrient));
         saveParticles.push_back(pt);
     }
 
@@ -142,11 +140,11 @@ extern "C" int Function_ChangeBinaryToBaseParticles(void * input_string, int ptC
     oarch.saveBinaryValue(&saveParticles[0], sizeof(CParticleBase)*ptCount);
 
     std::string out_string = out_stream.str();
-    for(int i = 0; i < out_string.length(); i++){
-        ((char*)input_string)[i] = out_string[i];
+    for(int i = 17; i < out_string.length()-1; i++) {
+        ((char*)output_string)[i-17] = out_string[i];
     }
 
-    return out_string.length();
+    return strlen((char*)output_string);
 }
 
 extern "C" void Function_GetParticleOrientationProbability(char ** input_string,
@@ -206,13 +204,14 @@ extern "C" void Function_GetChainOrientationProbability(char ** input_string,
     }
     arch.loadBinaryValue(&particles[0], sizeof(CParticleBase) * ptCount);
 
-    bool chain_1 = particles[0].GetOrientation().Z > 0;
-    bool chain_2 = true;
+    bool chain_1;
+    bool chain_2;
 
     int chainLength = 0;
 
     for (int i = 0; i < particles.size(); i++) {
         auto& pt = particles[i];
+        chain_1 = pt.GetOrientation().Z > 0;
         auto& pt_next = particles[get_next(i, ptCount)];
 
         auto cosTheta = pt.GetOrientation().Z;
@@ -224,10 +223,11 @@ extern "C" void Function_GetChainOrientationProbability(char ** input_string,
             chainLength++;
         }
         else {
-            if (chain_1 && chain_2) corr_counts_out[3]++;
-            if (!chain_1 && chain_2) corr_counts_out[2]++;
-            if (chain_1 && !chain_2) corr_counts_out[1]++;
-            if (!chain_1 && !chain_2) corr_counts_out[0]++;
+            // rr, lr, rl, ll
+            if (chain_1 && chain_2) corr_counts_out[0]++;
+            if (!chain_1 && chain_2) corr_counts_out[1]++;
+            if (chain_1 && !chain_2) corr_counts_out[2]++;
+            if (!chain_1 && !chain_2) corr_counts_out[3]++;
 
             if (chain_1) {
                 corr_counts_out[4]++;
@@ -238,8 +238,6 @@ extern "C" void Function_GetChainOrientationProbability(char ** input_string,
 
             corr_counts_out[6] += chainLength;
             chainLength = 0;
-
-            chain_1 = chain_2;
         }
     }
 }
@@ -363,54 +361,4 @@ extern "C" void Function_UnwrapBinary(char ** input_string, int* in_size, double
     cereal::JSONInputArchive arch(in_stream);
 
     arch.loadBinaryValue(ret, sizeof(double) * size);
-}
-
-int main() {
-
-    int size = 3200;
-
-    double maxCorrLength = 20;
-    int corrPointsCount = 20;
-
-    double correlations[20];
-    double corrLengths[20];
-    int correlationCounts[20];
-
-    for (int i = 0; i < 20; ++i) {
-        correlations[i] = 0;
-        correlationCounts[i] = 0;
-        corrLengths[i] = i;
-    }
-
-    double systemSize = 3200;
-
-    Function_GetCorrelations(&encoded,
-                             &size,
-                             &corrPointsCount,
-                             &maxCorrLength,
-                             correlations,
-                             correlationCounts,
-                             corrLengths,
-                             &systemSize);
-
-    for (int i = 0; i < 20; ++i) {
-        correlations[i] = 0;
-        correlationCounts[i] = 0;
-        corrLengths[i] = i;
-    }
-
-    double rho = 0.25;
-    double cutOff = 1;
-    double minDst = systemSize;
-    double maxDst = 0;
-    double aver = 0;
-
-    Function_GetChainOrientationProbability(&encoded, &size, &cutOff, correlationCounts, &minDst);
-    Function_GetChainOrientationProbabilityTest(&encoded, &size, &cutOff, correlationCounts, &minDst);
-
-//    Function_ChangeBinaryToBaseParticles(&encoded, size);
-
-
-
-    return 0;
 }

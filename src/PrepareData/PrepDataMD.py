@@ -96,8 +96,12 @@ def populateData(simData, run_all_file_lines):
                                       "cp $SGE_O_WORKDIR//Data_" + run_index_string + ".json" + " $TMPDIR\n",
                                       "\n",
                                       "cd $TMPDIR\n",
-                                      "(time .//ExecFile Data_" + run_index_string + ".json" + " LD " + str(samplesPerRunCount) + " >&time_" + run_index_string + ".txt\n",
-                                      "cp * $SGE_O_WORKDIR//\n",
+                                      "(time .//ExecFile Data_" + run_index_string + ".json" + " LD " + str(samplesPerRunCount) + ") >&time_" + run_index_string + ".txt\n",
+                                      "find ./ -type f -name \"Resul*.json*\" > include-file\n",
+                                      "find ./ -type f -name \"Picture*.eps*\" > include-file\n",
+                                      "tar -czpf MD_dipole_" + run_index_string + ".tar.gz -T include-file\n",
+
+                                      "cp MD_dipole_" + run_index_string + ".tar.gz $SGE_O_WORKDIR//\n",
                                       "rm *\n"]
 
                     with open("r"+run_index_string, "w") as run_file:

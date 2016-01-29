@@ -96,14 +96,19 @@ def populateData(simData, run_all_file_lines):
                                       "cp $SGE_O_WORKDIR//Data_" + run_index_string + ".json" + " $TMPDIR\n",
                                       "\n",
                                       "cd $TMPDIR\n",
-                                      "(time .//ExecFile Data_" + run_index_string + ".json" + " MC " + str(samplesPerRunCount) + " >&time_" + run_index_string + ".txt\n",
-                                      "cp * $SGE_O_WORKDIR//\n",
-                                      "rm *\n"]
+                                      "(time .//ExecFile Data_" + run_index_string + ".json" + " MC " + str(samplesPerRunCount) + ") >&time_" + run_index_string + ".txt\n",
+
+                                      "find ./ -type f -name \"Resul*.json*\" > include-file",
+                                      "find ./ -type f -name \"Picture*.eps*\" > include-file",
+                                      "tar -czpf MC_dipole_" + run_index_string + ".tar.gz -T include-file ",
+
+                                      "cp MC_dipole_" + run_index_string + ".tar.gz $SGE_O_WORKDIR//\n",
+                                      "rm * \n"]
 
                     with open("r"+run_index_string, "w") as run_file:
                         run_file.writelines(run_file_lines)
 
-                    run_file_name = "DT"+str(round(simDataToSave["value0"]["Base"]["KbT"], 2))+"_N"+str(simDataToSave["value0"]["Base"]["PtCount"]) + "r"+run_index_string
+                    run_file_name = "CT"+str(round(simDataToSave["value0"]["Base"]["KbT"], 2))+"_N"+str(simDataToSave["value0"]["Base"]["PtCount"]) + "r"+run_index_string
                     sh.move("r"+run_index_string, folder_name + "/" + run_file_name)
                     run_all_file_lines.append([folder_name, run_file_name])
 

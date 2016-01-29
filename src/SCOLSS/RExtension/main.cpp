@@ -8,7 +8,7 @@
 int main() {
     void* handle = dlopen("../build/lib/libRExtensionLibrary.so", RTLD_LAZY);
 
-    int size = 3200;
+    int ptCount = 5000;
 
     double maxCorrLength = 20;
     int corrPointsCount = 20;
@@ -23,10 +23,14 @@ int main() {
         corrLengths[i] = i;
     }
 
-    double systemSize = 3200;
+    double systemSize = 10000;
+
+    char out_str[300000];
+
+//    std::cout << Function_ChangeBinaryToBaseParticles(encoded, out_str, ptCount) << std::endl;
 
 //    Function_GetCorrelations(&encoded,
-//                             &size,
+//                             &ptCount,
 //                             &corrPointsCount,
 //                             &maxCorrLength,
 //                             correlations,
@@ -46,8 +50,8 @@ int main() {
     double maxDst = 0;
     double aver = 0;
 
-    Function_GetChainOrientationProbability(&encoded, &size, &cutOff, correlationCounts, &minDst);
-//    Function_GetChainOrientationProbabilityTest(&encoded, &size, &cutOff, correlationCounts, &minDst);
+    Function_GetChainOrientationProbability(&encoded, &ptCount, &cutOff, correlationCounts, &systemSize);
+//    Function_GetChainOrientationProbabilityTest(&encoded, &ptCount, &cutOff, correlationCounts, &minDst);
 
     return 0;
 }
