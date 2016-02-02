@@ -50,7 +50,7 @@ int main() {
     double maxDst = 0;
     double aver = 0;
 
-    Function_GetChainOrientationProbability(&encoded, &ptCount, &cutOff, correlationCounts, &systemSize);
+//    Function_GetChainOrientationProbability(&encoded, &ptCount, &cutOff, correlationCounts, &systemSize);
 //    Function_GetChainOrientationProbabilityTest(&encoded, &ptCount, &cutOff, correlationCounts, &minDst);
 
     return 0;

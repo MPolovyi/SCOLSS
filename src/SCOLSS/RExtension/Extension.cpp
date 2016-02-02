@@ -164,6 +164,7 @@ extern "C" void Function_GetParticleOrientationProbability(char ** input_string,
     for (int i = 0; i < ptCount; ++i) {
         particles.push_back(CParticleBase());
     }
+
     arch.loadBinaryValue(&particles[0], sizeof(CParticleBase) * ptCount);
 
     double dist = 0;
@@ -185,6 +186,7 @@ extern "C" void Function_GetChainOrientationProbability(char ** input_string,
                                                         int*_ptCount,
                                                         double*  _separationCutOff,
                                                         int* corr_counts_out,
+                                                        double* corr_lengths_out,
                                                         double* _systemSize) {
     int ptCount = _ptCount[0];
     double separationCutOff = _separationCutOff[0];
@@ -219,15 +221,27 @@ extern "C" void Function_GetChainOrientationProbability(char ** input_string,
 
         chain_2 = cosTheta_next > 0;
 
-        if(pt.GetDistanceRight(pt_next, systemSize).GetLength() <= separationCutOff && cosTheta * cosTheta_next >= 0){
+        if((pt.GetDistanceRight(pt_next, systemSize).GetLength() <= separationCutOff) && (cosTheta * cosTheta_next >= 0)){
             chainLength++;
         }
         else {
             // rr, lr, rl, ll
-            if (chain_1 && chain_2) corr_counts_out[0]++;
-            if (!chain_1 && chain_2) corr_counts_out[1]++;
-            if (chain_1 && !chain_2) corr_counts_out[2]++;
-            if (!chain_1 && !chain_2) corr_counts_out[3]++;
+            if (chain_1 && chain_2) {
+                corr_counts_out[0]++;
+                corr_lengths_out[0] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
+            }
+            if (!chain_1 && chain_2) {
+                corr_counts_out[1]++;
+                corr_lengths_out[1] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
+            }
+            if (chain_1 && !chain_2) {
+                corr_counts_out[2]++;
+                corr_lengths_out[2] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
+            }
+            if (!chain_1 && !chain_2) {
+                corr_counts_out[3]++;
+                corr_lengths_out[3] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
+            }
 
             if (chain_1) {
                 corr_counts_out[4]++;

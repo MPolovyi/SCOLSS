@@ -36,6 +36,7 @@ extern "C" void Function_GetChainOrientationProbability(char ** input_string,
                                                         int*_ptCount,
                                                         double*  _separationCutOff,
                                                         int* corr_counts_out,
+                                                        double* corr_lengths_out,
                                                         double* _systemSize);
 
 extern "C" void Function_GetChainOrientationProbabilityTest(char ** input_string,
