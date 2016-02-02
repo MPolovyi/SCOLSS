@@ -19,7 +19,22 @@ void RunSimulations(std::shared_ptr<CBaseSimCtrl> sim, std::string &mainSaveFile
 void SaveToFile(const std::shared_ptr<CBaseSimCtrl> &contr, const std::string &mainSaveFileName, uint64_t cycle);
 
 int main(int argc, char **argv) {
-    InitializeSimulations(argc, argv);
+    CYukawaDipolePt pt1(1000, 10, 1000);
+    CYukawaDipolePt pt2(1000, 10, 1000);
+
+    pt1.SetRotation(CQuaternion(0, CVector::AxisY));
+    pt2.SetRotation(CQuaternion(-0, CVector::AxisY));
+
+    for(int i = 1; i < 10; i++)
+        std::cout << pt1.GetPotentialEnergy(pt2, CVector(0, 0, i/10.0)) << std::endl;
+
+    std::cout << std::endl;
+    pt1.SetRotation(CQuaternion(M_PI_2, CVector::AxisX));
+    pt2.SetRotation(CQuaternion(-M_PI_2*1.1, CVector::AxisX));
+
+    for(int i = 1; i < 10; i++)
+        std::cout << pt1.GetPotentialEnergy(pt2, CVector(0, 0, i/10.0)) << std::endl;
+//    InitializeSimulations(argc, argv);
 }
 
 void InitializeSimulations(int argc, char **argv) {

@@ -32,6 +32,21 @@ extern "C" void Function_GetParticleOrientationProbability(char ** input_string,
                                                            int*_ptCount,
                                                            int* corr_counts_out);
 
+extern "C" void Function_GetChainOrientationProbabilityEnergy(char ** input_string,
+                                                              int*_ptCount,
+                                                              double*  _separationCutOff,
+                                                              int* corr_counts_out,
+                                                              double* corr_lengths_out,
+                                                              double* _systemSize);
+
+extern "C" void Function_GetDynamicChains(double* neigh_c,
+                                          double* coords_last,
+                                          char** pts,
+                                          int* _strLength,
+                                          int* _timePointsCount,
+                                          int* _ptCount,
+                                          double* _systemSize);
+
 extern "C" void Function_GetChainOrientationProbability(char ** input_string,
                                                         int*_ptCount,
                                                         double*  _separationCutOff,
