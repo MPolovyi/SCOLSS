@@ -7,10 +7,10 @@
       "LoadSavedState": 0,
       "NumberOfImageLines": 5000,
       "NumberOfSavePoints": 50,
-      "PtCount": 500,
+      "PtCount": 5000,
       "SavedParticles": ""
     },
     "CyclesBetweenSaves": 200000,
-    "TimeBetweenSaves": 10
+    "TimeBetweenSaves": 0.5
   }
 }

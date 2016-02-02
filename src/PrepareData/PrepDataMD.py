@@ -21,7 +21,7 @@ def populateData(simData, run_all_file_lines):
 
     data = raw_input("InitialConfiguration = ")
     if len(data) != 0:
-        simData["Base"]["InitialConfiguration"] = int(data)
+        simData["Base"]["InitialConfiguration"] = eval(data)
 
     print(str(simData))
 
@@ -49,87 +49,93 @@ def populateData(simData, run_all_file_lines):
     for ptc in simData["Base"]["PtCount"]:
             for rho in simData["Base"]["Density"]:
                 for kbt in simData["Base"]["KbT"]:
-                    simDataToSave = {"value0": dict(simData)}
-                    simDataToSave["value0"]["Base"] = dict(simData["Base"])
-                    simDataToSave["value0"]["Base"]["KbT"] = kbt
-                    simDataToSave["value0"]["Base"]["PtCount"] = ptc
-                    simDataToSave["value0"]["Base"]["Density"] = rho
+                    for ic in simData["Base"]["InitialConfiguration"]:
+                        simDataToSave = {"value0": dict(simData)}
+                        simDataToSave["value0"]["Base"] = dict(simData["Base"])
+                        simDataToSave["value0"]["Base"]["KbT"] = kbt
+                        simDataToSave["value0"]["Base"]["PtCount"] = ptc
+                        simDataToSave["value0"]["Base"]["Density"] = rho
+                        simDataToSave["value0"]["Base"]["InitialConfiguration"] = ic
 
-                    folder_name = "T_" + str(simDataToSave["value0"]["TimeBetweenSaves"]) +\
-                                  "_I_" + str(simDataToSave["value0"]["Base"]["InitialConfiguration"]) + \
-                                  "_K_" + str(kbt) + "_P_" + str(ptc) + "_D_" + str(rho)
+                        folder_name = "T_" + str(simDataToSave["value0"]["TimeBetweenSaves"]) +\
+                                      "_I_" + str(simDataToSave["value0"]["Base"]["InitialConfiguration"]) + \
+                                      "_K_" + str(kbt) + "_P_" + str(ptc) + "_D_" + str(rho)
 
-                    if not os.path.exists(folder_name):
-                        os.makedirs(folder_name)
-                    else:
-                        pass
+                        if not os.path.exists(folder_name):
+                            os.makedirs(folder_name)
+                        else:
+                            pass
 
-                    sh.copy("ExecFile", folder_name + "/ExecFile")
+                        sh.copy("ExecFile", folder_name + "/ExecFile")
 
 
     for index in range(0, samplesCount):
         for ptc in simData["Base"]["PtCount"]:
             for rho in simData["Base"]["Density"]:
                 for kbt in simData["Base"]["KbT"]:
-                    simDataToSave = {"value0": dict(simData)}
-                    simDataToSave["value0"]["Base"] = dict(simData["Base"])
-                    simDataToSave["value0"]["Base"]["KbT"] = kbt
-                    simDataToSave["value0"]["Base"]["PtCount"] = ptc
-                    simDataToSave["value0"]["Base"]["Density"] = rho
+                    for ic in simData["Base"]["InitialConfiguration"]:
+                        simDataToSave = {"value0": dict(simData)}
+                        simDataToSave["value0"]["Base"] = dict(simData["Base"])
+                        simDataToSave["value0"]["Base"]["KbT"] = kbt
+                        simDataToSave["value0"]["Base"]["PtCount"] = ptc
+                        simDataToSave["value0"]["Base"]["Density"] = rho
+                        simDataToSave["value0"]["Base"]["InitialConfiguration"] = ic
 
-                    folder_name = "T_" + str(simDataToSave["value0"]["TimeBetweenSaves"]) +\
-                                  "_I_" + str(simDataToSave["value0"]["Base"]["InitialConfiguration"]) + \
-                                  "_K_" + str(kbt) + "_P_" + str(ptc) + "_D_" + str(rho)
+                        folder_name = "T_" + str(simDataToSave["value0"]["TimeBetweenSaves"]) +\
+                                      "_I_" + str(simDataToSave["value0"]["Base"]["InitialConfiguration"]) + \
+                                      "_K_" + str(kbt) + "_P_" + str(ptc) + "_D_" + str(rho)
 
-                    run_index_string = str(index)
+                        run_index_string = str(index)
 
-                    run_file_lines = ["#$ -S //bin//sh \n",
-                                      "#$ -j y \n",
-                                      "#$ -m bes \n",
-                                      "#$ -M max.polovyi@gmail.com \n",
-                                      "#$ -V \n",
-                                      "#$ -cwd \n",
-                                      "#$ -l virtual_free=500M -l h_vmem=800M \n",
-                                      "#$ -q SHORT\n",
-                                      "\n",
-                                      "cp $SGE_O_WORKDIR//ExecFile $TMPDIR\n",
-                                      "cp $SGE_O_WORKDIR//Data_" + run_index_string + ".json" + " $TMPDIR\n",
-                                      "\n",
-                                      "cd $TMPDIR\n",
-                                      "(time .//ExecFile Data_" + run_index_string + ".json" + " LD " + str(samplesPerRunCount) + ") >&time_" + run_index_string + ".txt\n",
-                                      "find ./ -type f -name \"Resul*.json*\" > include-file\n",
-                                      "find ./ -type f -name \"Picture*.eps*\" > include-file\n",
-                                      "tar -czpf MD_dipole_" + run_index_string + ".tar.gz -T include-file\n",
+                        run_file_lines = ["#$ -S //bin//sh \n",
+                                          "#$ -j y \n",
+                                          "#$ -m bes \n",
+                                          "#$ -M max.polovyi@gmail.com \n",
+                                          "#$ -V \n",
+                                          "#$ -cwd \n",
+                                          "#$ -l virtual_free=500M -l h_vmem=800M \n",
+                                          "#$ -q SHORT\n",
+                                          "\n",
+                                          "cp $SGE_O_WORKDIR//ExecFile $TMPDIR\n",
+                                          "cp $SGE_O_WORKDIR//Data_" + run_index_string + ".json" + " $TMPDIR\n",
+                                          "\n",
+                                          "cd $TMPDIR\n",
+                                          "(time .//ExecFile Data_" + run_index_string + ".json" + " LD " + str(samplesPerRunCount) + ") >&time_" + run_index_string + ".txt\n",
+                                          "find . -type f -name \"Resul*.json*\" > include-file\n",
+                                          "find . -type f -name \"Picture*.eps*\" >> include-file\n",
+                                          "tar -cpf MD_dipole_" + run_index_string + ".tar -T include-file\n",
 
-                                      "cp MD_dipole_" + run_index_string + ".tar.gz $SGE_O_WORKDIR//\n",
-                                      "rm *\n"]
+                                          "cp MD_dipole_" + run_index_string + ".tar $SGE_O_WORKDIR//\n",
+                                          "rm *\n",
+                                          "cd $SGE_O_WORKDIR\n",
+                                          "tar -xf MD_dipole_" + run_index_string + ".tar --wildcards --no-anchored '*json*'\n"]
 
-                    with open("r"+run_index_string, "w") as run_file:
-                        run_file.writelines(run_file_lines)
+                        with open("r"+run_index_string, "w") as run_file:
+                            run_file.writelines(run_file_lines)
 
-                    run_file_name = "DT"+str(round(simDataToSave["value0"]["Base"]["KbT"], 2))+"_N"+str(simDataToSave["value0"]["Base"]["PtCount"]) + "r"+run_index_string
-                    sh.move("r"+run_index_string, folder_name + "/" + run_file_name)
-                    run_all_file_lines.append([folder_name, run_file_name])
+                        run_file_name = "DT"+str(round(simDataToSave["value0"]["Base"]["KbT"], 2))+"_N"+str(simDataToSave["value0"]["Base"]["PtCount"]) + "r"+run_index_string
+                        sh.move("r"+run_index_string, folder_name + "/" + run_file_name)
+                        run_all_file_lines.append([folder_name, run_file_name])
 
-                    with open("Data0.json", "w") as outfile:
-                        json.dump(simDataToSave, outfile, sort_keys=True, indent=4, separators=(',', ': '))
+                        with open("Data0.json", "w") as outfile:
+                            json.dump(simDataToSave, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
-                    fname = "Data_" + run_index_string + ".json"
-                    sh.copy("Data0.json", folder_name + "/" + fname)
+                        fname = "Data_" + run_index_string + ".json"
+                        sh.copy("Data0.json", folder_name + "/" + fname)
 
 simData = {
     "Base": {
-        "Density": [0.25],
-        "InitialConfiguration": 1,
-        "KbT": [1],
+        "Density": [0.25, 0.5, 0.75],
+        "InitialConfiguration": [0, 1],
+        "KbT": [0.4, 1, 1.5, 2],
         "LoadSavedState": 0,
-        "NumberOfSavePoints": 50,
+        "NumberOfSavePoints": 20,
         "NumberOfImageLines": 1000,
         "PtCount": [5000],
         "SavedParticles": ""
     },
-    "CyclesBetweenSaves": 10,
-    "TimeBetweenSaves": 0.05
+    "CyclesBetweenSaves": 200000,
+   "TimeBetweenSaves": 0.5 
 }
 
 run_all_file_lines = []
