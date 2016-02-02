@@ -87,25 +87,23 @@ def populateData(simData, run_all_file_lines):
 
                         run_index_string = str(index)
 
-                        run_file_lines = ["#$ -S //bin//sh \n",
+                        run_file_lines = ["#$ -S /bin/sh \n",
                                           "#$ -j y \n",
-                                          "#$ -m bes \n",
-                                          "#$ -M max.polovyi@gmail.com \n",
-                                          "#$ -V \n",
+                                          "#$ -m eas \n",
                                           "#$ -cwd \n",
-                                          "#$ -l virtual_free=500M -l h_vmem=800M \n",
+                                          "#$ -l virtual_free=800M -l h_vmem=800M \n",
                                           "#$ -q SHORT\n",
                                           "\n",
-                                          "cp $SGE_O_WORKDIR//ExecFile $TMPDIR\n",
-                                          "cp $SGE_O_WORKDIR//Data_" + run_index_string + ".json" + " $TMPDIR\n",
+                                          "cp $SGE_O_WORKDIR/ExecFile $TMPDIR\n",
+                                          "cp $SGE_O_WORKDIR/Data_" + run_index_string + ".json" + " $TMPDIR\n",
                                           "\n",
                                           "cd $TMPDIR\n",
-                                          "(time .//ExecFile Data_" + run_index_string + ".json" + " LD " + str(samplesPerRunCount) + ") >&time_" + run_index_string + ".txt\n",
+                                          "(time ./ExecFile Data_" + run_index_string + ".json" + " LD " + str(samplesPerRunCount) + ") >&time_" + run_index_string + ".txt\n",
                                           "find . -type f -name \"Resul*.json*\" > include-file\n",
                                           "find . -type f -name \"Picture*.eps*\" >> include-file\n",
                                           "tar -cpf MD_dipole_" + run_index_string + ".tar -T include-file\n",
 
-                                          "cp MD_dipole_" + run_index_string + ".tar $SGE_O_WORKDIR//\n",
+                                          "cp MD_dipole_" + run_index_string + ".tar $SGE_O_WORKDIR/\n",
                                           "rm *\n",
                                           "cd $SGE_O_WORKDIR\n",
                                           "tar -xf MD_dipole_" + run_index_string + ".tar --wildcards --no-anchored '*json*'\n"]

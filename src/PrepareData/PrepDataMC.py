@@ -99,19 +99,15 @@ def populateData(simData, run_all_file_lines):
                                           "\n",
                                           "cd $TMPDIR\n",
                                           "(time ./ExecFile Data_" + run_index_string + ".json" + " MC " + str(samplesPerRunCount) + ") >&time_" + run_index_string + ".txt\n",
-
                                           "find . -type f -name \"Resul*.json*\" > include-file\n",
                                           "find . -type f -name \"Picture*.eps*\" >> include-file\n",
                                           "tar -czpf MC_dipole_" + run_index_string + ".tar.gz -T include-file\n",
 
                                           "cp MC_dipole_" + run_index_string + ".tar.gz $SGE_O_WORKDIR/\n",
+
                                           "rm * \n",
                                            "cd $SGE_O_WORKDIR\n",
                                           "tar -xf MC_dipole_" + run_index_string + ".tar.gz --wildcards --no-anchored 'Resul*json*'\n"]
-
-
-
-
 
                         with open("r"+run_index_string, "w") as run_file:
                             run_file.writelines(run_file_lines)
