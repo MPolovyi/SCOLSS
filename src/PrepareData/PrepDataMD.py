@@ -155,5 +155,6 @@ with open("run_all.sh", "w") as run_file:
         run_file.write("cd " + run_line[0] + "\n")
         run_file.write("qsub " + run_line[1] + "\n")
         run_file.write("cd .. \n")
+        run_file.write("sleep 3s \n")
 
 os.chmod("run_all.sh", 0750)
