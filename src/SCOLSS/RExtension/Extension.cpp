@@ -3,9 +3,6 @@
 //
 
 #include "ExtensionDefs.h"
-// Created by mpolovyi on 28/01/16.
-//
-
 #include <iostream>
 #include <cmath>
 #include "math.h"
@@ -198,11 +195,12 @@ extern "C" void Function_GetParticleOrientationProbability(char ** input_string,
 }
 
 extern "C" void Function_GetChainOrientationProbabilityEnergy(char ** input_string,
-                                                        int*_ptCount,
-                                                        double*  _separationCutOff,
-                                                        int* corr_counts_out,
-                                                        double* corr_lengths_out,
-                                                        double* _systemSize) {
+                                                              int*_ptCount,
+                                                              double*  _separationCutOff,
+                                                              int* corr_counts_out,
+                                                              int* corr_counts_out_2,
+                                                              double* corr_lengths_out,
+                                                              double* _systemSize) {
     int ptCount = _ptCount[0];
     double separationCutOff = _separationCutOff[0];
     double systemSize = _systemSize[0];
@@ -254,27 +252,105 @@ extern "C" void Function_GetChainOrientationProbabilityEnergy(char ** input_stri
             // rr, lr, rl, ll
             if (chain_1 && chain_2) {
                 corr_counts_out[0]++;
+                corr_counts_out_2[0]++;
                 corr_lengths_out[0] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
 
                 corr_lengths_out[4] += energy;
             }
             if (!chain_1 && chain_2) {
                 corr_counts_out[1]++;
+                corr_counts_out_2[1]++;
                 corr_lengths_out[1] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
 
                 corr_lengths_out[5] += energy;
             }
             if (chain_1 && !chain_2) {
                 corr_counts_out[2]++;
+                corr_counts_out_2[2]++;
                 corr_lengths_out[2] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
 
                 corr_lengths_out[6] += energy;
             }
             if (!chain_1 && !chain_2) {
                 corr_counts_out[3]++;
+                corr_counts_out_2[3]++;
                 corr_lengths_out[3] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
 
                 corr_lengths_out[7] += energy;
+            }
+
+            if (chain_1) {
+                corr_counts_out[4]++;
+                corr_counts_out_2[4]++;
+            }
+            else {
+                corr_counts_out[5]++;
+                corr_counts_out_2[5]++;
+            }
+
+            corr_counts_out[6] += chainLength;
+            chainLength = 0;
+        }
+    }
+}
+
+extern "C" void Function_GetChainOrientationProbabilityCorrelation(char ** input_string,
+                                                              int*_ptCount,
+                                                              double*_correlationCutOff,
+                                                              int* corr_counts_out,
+                                                              double* corr_lengths_out,
+                                                              double* _systemSize) {
+    int ptCount = _ptCount[0];
+    double correlationCutOff = _correlationCutOff[0];
+    double systemSize = _systemSize[0];
+
+    auto particles = LoadParticles(*input_string, ptCount);
+
+    bool chain_1;
+    bool chain_2;
+
+    int chainLength = 0;
+
+    for (int i = 0; i < particles.size(); i++) {
+        auto& pt = particles[i];
+        chain_1 = pt.GetOrientation().Z > 0;
+        auto& pt_next = particles[get_next(i, ptCount)];
+
+        auto cosTheta = pt.GetOrientation().Z;
+        auto cosTheta_next = pt_next.GetOrientation().Z;
+
+        chain_2 = cosTheta_next > 0;
+
+        double relCos = cosTheta*cosTheta_next;
+
+        if(std::abs(relCos) > correlationCutOff) {
+            chainLength++;
+        }
+        else {
+            // rr, lr, rl, ll
+            if (chain_1 && chain_2) {
+                corr_counts_out[0]++;
+                corr_lengths_out[0] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
+
+                corr_lengths_out[4] += relCos;
+            }
+            if (!chain_1 && chain_2) {
+                corr_counts_out[1]++;
+                corr_lengths_out[1] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
+
+                corr_lengths_out[5] += relCos;
+            }
+            if (chain_1 && !chain_2) {
+                corr_counts_out[2]++;
+                corr_lengths_out[2] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
+
+                corr_lengths_out[6] += relCos;
+            }
+            if (!chain_1 && !chain_2) {
+                corr_counts_out[3]++;
+                corr_lengths_out[3] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
+
+                corr_lengths_out[7] += relCos;
             }
 
             if (chain_1) {
@@ -380,6 +456,8 @@ extern "C" void Function_GetChainOrientationProbability(char ** input_string,
         }
     }
 }
+
+
 
 extern "C" void Function_GetChainOrientationProbabilityTest(char ** input_string,
                                                             int*_ptCount,
@@ -503,16 +581,18 @@ extern "C" void Function_UnwrapBinary(char ** input_string, int* in_size, double
 }
 
 
-extern "C" void Function_GetDynamicChains(double* neigh_c,
-                                          double* coords_first,
-                                          char** pts,
-                                          int* _strLength,
-                                          int* _timePointsCount,
-                                          int* _ptCount,
-                                          double* _systemSize) {
-    int PtCount = _ptCount[0];
-    double SystemSize = _systemSize[0];
+extern "C" void Function_GetDynamicChains(double *neigh_c,
+                                          double *coords_first,
+                                          int *chained,
+                                          char **pts,
+                                          int *_strLength,
+                                          int *_timePointsCount,
+                                          int *_ptCount,
+                                          double *_systemSize) {
+    int ptCount = _ptCount[0];
+    double systemSize = _systemSize[0];
     int ptStringLength = _strLength[0];
+    int chainedCutOff = chained[0];
 
     std::vector<std::vector<CParticleBase>> particles;
 
@@ -521,11 +601,11 @@ extern "C" void Function_GetDynamicChains(double* neigh_c,
     for (int k = 0; k < _timePointsCount[0]; ++k) {
         strncpy(&pts_i[0], &pts[0][k * ptStringLength], ptStringLength);
 
-        particles.push_back(LoadParticles(&pts_i[0], PtCount));
+        particles.push_back(LoadParticles(&pts_i[0], ptCount));
     }
 
-    for (int i = 0; i < PtCount; ++i) {
-        int next_index = get_next(i, PtCount);
+    for (int i = 0; i < ptCount; ++i) {
+        int next_index = get_next(i, ptCount);
 
         double dot = 0;
         CVector vec_i;
@@ -538,7 +618,11 @@ extern "C" void Function_GetDynamicChains(double* neigh_c,
             vec_j += particles[j][next_index].GetOrientation();
         }
 
-        neigh_c[i] = dot/3.0 - (vec_i/3).DotProduct((vec_j/3));
+        neigh_c[i] = dot/_timePointsCount[0] - (vec_i/_timePointsCount[0]).DotProduct((vec_j/_timePointsCount[0]));
+
+        if(neigh_c[i] < chainedCutOff){
+            chained[i] = particles[0][i].GetOrientation().Z * particles[0][next_index].GetOrientation().Z > 0;
+        }
 
         coords_first[i] = particles[0][i].Coordinates;
     }

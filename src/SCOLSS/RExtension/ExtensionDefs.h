@@ -26,6 +26,13 @@ extern "C" void Function_GetCorrelations(char ** input_string,
                                          double* corr_lengths_out,
                                          double* _systemSize);
 
+extern "C" void Function_GetChainOrientationProbabilityCorrelation(char ** input_string,
+                                                                   int*_ptCount,
+                                                                   double*_correlationCutOff,
+                                                                   int* corr_counts_out,
+                                                                   double* corr_lengths_out,
+                                                                   double* _systemSize);
+
 extern "C" int Function_ChangeBinaryToBaseParticles(void * input_string, void * output_string, int ptCount);
 
 extern "C" void Function_GetParticleOrientationProbability(char ** input_string,
@@ -36,16 +43,18 @@ extern "C" void Function_GetChainOrientationProbabilityEnergy(char ** input_stri
                                                               int*_ptCount,
                                                               double*  _separationCutOff,
                                                               int* corr_counts_out,
+                                                              int* corr_counts_out_2,
                                                               double* corr_lengths_out,
                                                               double* _systemSize);
 
-extern "C" void Function_GetDynamicChains(double* neigh_c,
-                                          double* coords_last,
-                                          char** pts,
-                                          int* _strLength,
-                                          int* _timePointsCount,
-                                          int* _ptCount,
-                                          double* _systemSize);
+extern "C" void Function_GetDynamicChains(double *neigh_c,
+                                          double *coords_first,
+                                          int *chained,
+                                          char **pts,
+                                          int *_strLength,
+                                          int *_timePointsCount,
+                                          int *_ptCount,
+                                          double *_systemSize);
 
 extern "C" void Function_GetChainOrientationProbability(char ** input_string,
                                                         int*_ptCount,

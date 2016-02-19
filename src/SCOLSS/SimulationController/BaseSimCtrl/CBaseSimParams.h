@@ -47,6 +47,8 @@ public:
     double YukawaA;
     double YukawaK;
 
+    bool SaveParticlesInfo;
+
     std::vector<CParticleBase> savedStateToLoad;
 
     template<class Archive>
@@ -70,6 +72,8 @@ public:
         archive(cereal::make_nvp("KbT", KbT));
         archive(cereal::make_nvp("PtCount", PtCount));
         archive(cereal::make_nvp("NumberOfImageLines", NumberOfImageLines));
+
+        archive(cereal::make_nvp("SaveParticlesInfo", SaveParticlesInfo));
 
         int initialConfiguration;
         archive(cereal::make_nvp("InitialConfiguration", initialConfiguration));

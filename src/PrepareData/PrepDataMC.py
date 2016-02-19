@@ -2,6 +2,7 @@ import json
 import os
 import shutil as sh
 import sys
+import datetime
 
 __author__ = 'mpolovyi'
 
@@ -47,27 +48,26 @@ def populateData(simData, run_all_file_lines):
         samplesPerRunCount = int(data)
 
     for ptc in simData["Base"]["PtCount"]:
-            for rho in simData["Base"]["Density"]:
-                for kbt in simData["Base"]["KbT"]:
-                    for ic in simData["Base"]["InitialConfiguration"]:
-                        simDataToSave = {"value0": dict(simData)}
-                        simDataToSave["value0"]["Base"] = dict(simData["Base"])
-                        simDataToSave["value0"]["Base"]["KbT"] = kbt
-                        simDataToSave["value0"]["Base"]["PtCount"] = ptc
-                        simDataToSave["value0"]["Base"]["Density"] = rho
-                        simDataToSave["value0"]["Base"]["InitialConfiguration"] = ic
+        for rho in simData["Base"]["Density"]:
+            for kbt in simData["Base"]["KbT"]:
+                for ic in simData["Base"]["InitialConfiguration"]:
+                    simDataToSave = {"value0": dict(simData)}
+                    simDataToSave["value0"]["Base"] = dict(simData["Base"])
+                    simDataToSave["value0"]["Base"]["KbT"] = kbt
+                    simDataToSave["value0"]["Base"]["PtCount"] = ptc
+                    simDataToSave["value0"]["Base"]["Density"] = rho
+                    simDataToSave["value0"]["Base"]["InitialConfiguration"] = ic
 
-                        folder_name = "S_" + str(simDataToSave["value0"]["CyclesBetweenSaves"]) +\
-                                      "_I_" + str(simDataToSave["value0"]["Base"]["InitialConfiguration"]) + \
-                                      "_K_" + str(kbt) + "_P_" + str(ptc) + "_D_" + str(rho)
+                    folder_name = "S_{0:d}_I_{1:d}_K_{2:.2f}_P_{3:d}_D_{4:.2f}".format(
+                            simDataToSave["value0"]["CyclesBetweenSaves"],
+                            simDataToSave["value0"]["Base"]["InitialConfiguration"], kbt, ptc, rho)
 
-                        if not os.path.exists(folder_name):
-                            os.makedirs(folder_name)
-                        else:
-                            pass
+                    if not os.path.exists(folder_name):
+                        os.makedirs(folder_name)
+                    else:
+                        pass
 
-                        sh.copy("ExecFile", folder_name + "/ExecFile")
-
+                    sh.copy("ExecFile", folder_name + "/ExecFile")
 
     for index in range(0, samplesCount):
         for ptc in simData["Base"]["PtCount"]:
@@ -81,9 +81,9 @@ def populateData(simData, run_all_file_lines):
                         simDataToSave["value0"]["Base"]["Density"] = rho
                         simDataToSave["value0"]["Base"]["InitialConfiguration"] = ic
 
-                        folder_name = "S_" + str(simDataToSave["value0"]["CyclesBetweenSaves"]) +\
-                                      "_I_" + str(simDataToSave["value0"]["Base"]["InitialConfiguration"]) + \
-                                      "_K_" + str(kbt) + "_P_" + str(ptc) + "_D_" + str(rho)
+                        folder_name = "S_{0:d}_I_{1:d}_K_{2:.2f}_P_{3:d}_D_{4:.2f}".format(
+                            simDataToSave["value0"]["CyclesBetweenSaves"],
+                            simDataToSave["value0"]["Base"]["InitialConfiguration"], kbt, ptc, rho)
 
                         run_index_string = str(index)
 
@@ -101,19 +101,20 @@ def populateData(simData, run_all_file_lines):
                                           "(time ./ExecFile Data_" + run_index_string + ".json" + " MC " + str(samplesPerRunCount) + ") >&time_" + run_index_string + ".txt\n",
                                           "find . -type f -name \"Resul*.json*\" > include-file\n",
                                           "find . -type f -name \"Picture*.eps*\" >> include-file\n",
-                                          "tar -czpf MC_dipole_" + run_index_string + ".tar.gz -T include-file\n",
+                                          "tar -cpf MC_dipole_" + run_index_string + ".tar -T include-file\n",
 
-                                          "cp MC_dipole_" + run_index_string + ".tar.gz $SGE_O_WORKDIR/\n",
-
-                                          "rm * \n",
-                                           "cd $SGE_O_WORKDIR\n",
-                                          "tar -xf MC_dipole_" + run_index_string + ".tar.gz --wildcards --no-anchored 'Resul*json*'\n"]
+                                          "cp MC_dipole_" + run_index_string + ".tar $SGE_O_WORKDIR/\n",
+                                          "rm *\n",
+                                          "cd $SGE_O_WORKDIR\n",
+                                          "tar -xf MC_dipole_" + run_index_string + ".tar --wildcards --no-anchored '*json*'\n"]
 
                         with open("r"+run_index_string, "w") as run_file:
                             run_file.writelines(run_file_lines)
 
-                        run_file_name = "CT"+str(round(simDataToSave["value0"]["Base"]["KbT"], 2))+"_N"+str(simDataToSave["value0"]["Base"]["PtCount"]) + "r"+run_index_string
-                        sh.move("r"+run_index_string, folder_name + "/" + run_file_name)
+                        run_file_name = "CT{0:.2f}_N{1:d}r{2:s}".format(simDataToSave["value0"]["Base"]["KbT"],
+                                                                simDataToSave["value0"]["Base"]["PtCount"],
+                                                                run_index_string)
+                        sh.move("r" + run_index_string, folder_name + "/" + run_file_name)
                         run_all_file_lines.append([folder_name, run_file_name])
 
                         with open("Data0.json", "w") as outfile:
@@ -126,14 +127,14 @@ simData = {
     "Base": {
         "Density": [0.25, 0.5, 0.75],
         "InitialConfiguration": [0, 1],
-        "KbT": [0.4, 1, 1.5, 2],
+        "KbT": [0.6, 0.7, 0.8, 0.9],
         "LoadSavedState": 0,
         "NumberOfSavePoints": 20,
         "NumberOfImageLines": 1000,
         "PtCount": [5000],
         "SavedParticles": ""
     },
-    "CyclesBetweenSaves": 200,
+    "CyclesBetweenSaves": 200000,
     "TimeBetweenSaves": 0.05
 }
 
@@ -151,11 +152,63 @@ while len(data) == 0:
             populateData(simData, run_all_file_lines)
             data = ""
 
-with open("run_all.sh", "w") as run_file:
+with open("nohup_run_all.sh", "w") as run_file:
     for run_line in run_all_file_lines:
         run_file.write("cd " + run_line[0] + "\n")
         run_file.write("qsub " + run_line[1] + "\n")
         run_file.write("cd .. \n")
-        run_file.write("sleep 3s \n")
+        run_file.write("sleep 4s \n")
+
+    run_file.write('i=$(qstat | grep " r" | wc -l) \n')
+    run_file.write('echo "Tasks ${i}" \n')
+
+    run_file.write('while [[ ${i} != "0" ]]; do \n')
+    run_file.write('    i=$(qstat | grep "DT" | wc -l) \n')
+    run_file.write('    echo "Still running ${i}" \n')
+    run_file.write('    sleep 20m \n')
+    run_file.write('done \n')
+
+    run_file.write('if [ -f ./data_saved ]; \n')
+    run_file.write('then \n')
+    run_file.write('    rm data_saved \n')
+    run_file.write('else \n')
+    run_file.write('    echo "No pre-saved data" \n')
+    run_file.write('fi \n')
+    run_file.write('touch include_file \n')
+
+    for KbT in simData["Base"]["KbT"]:
+        run_file.write(
+            'find ./S_{0:d}*K_{1:.2f}*/ -type f -name \"Resu*.json*\" >> include-file_{0:d}_{1:.2f} \n'.format(
+                simData["CyclesBetweenSaves"], KbT)
+        )
+
+    for KbT in simData["Base"]["KbT"]:
+        run_file.write(
+            'tar -czpf MC_dipole_{0:d}_{1:.2f}.tar.gz -T include-file_{0:d}_{1:.2f} \n'.format(
+                simData["CyclesBetweenSaves"], KbT)
+        )
+
+    run_file.write('rm include_file* \n')
+
+    run_file.write('touch data_saved.tmp \n')
+
+    for KbT in simData["Base"]["KbT"]:
+        run_file.write(
+            'echo "scp grace:SimpleColloid/bin/MC_dipole/MC_dipole_{0:d}_{1:.2f}.tar.gz MC_dipole_{0:d}_{1:.2f}.tar.gz" >> data_saved.tmp \n'.format(
+                simData["CyclesBetweenSaves"], KbT)
+        )
+
+    for KbT in simData["Base"]["KbT"]:
+        run_file.write(
+            'echo "tar -xf MC_dipole_{0:d}_{1:.2f}.tar.gz" >> data_saved.tmp \n'.format(
+                simData["CyclesBetweenSaves"], KbT)
+        )
+
+    run_file.write('mv data_saved.tmp data_saved \n')
+
+os.chmod("nohup_run_all.sh", 0750)
+
+with open("run_all.sh", "w") as run_file:
+    run_file.write("screen -dmS ./nohup_run_all.sh > run_all.out 2> run_all.err < /dev/null &")
 
 os.chmod("run_all.sh", 0750)

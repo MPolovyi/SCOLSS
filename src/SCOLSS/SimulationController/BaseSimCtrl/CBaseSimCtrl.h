@@ -48,7 +48,7 @@ public:
 
         archieve(cereal::make_nvp("PotentialEnergy", GetAveragePotentialEnergy()));
 
-        {
+        if(SimulationParameters.SaveParticlesInfo) {
             std::vector<CParticleBase> pts_save;
             for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
                 pts_save.push_back(particles_old[i]);
@@ -56,8 +56,6 @@ public:
 
             const CParticleBase *tmp = &pts_save[0];
             archieve.saveBinaryValue(tmp, sizeof(CParticleBase) * particles_old.size(), "Particles");
-//            auto tmp = GetParticleCoordinatesZ();
-//            archieve(cereal::make_nvp("Particles", tmp));
         }
     };
 
