@@ -45,9 +45,9 @@ void InitializeSimulations(int argc, char **argv) {
     }
 
     std::string simDataFileName = argv[1];
-    std::string fullSaveTarName = "FullData_" + simDataFileName + "_" + ".tar";
-    std::string miniSaveTarName = "MiniData_" + simDataFileName + "_" + ".tar";
-    std::string pictSaveTarName = "PictData_" + simDataFileName + "_" + ".tar";
+    std::string fullSaveTarName = "FullData_" + simDataFileName + ".tar";
+    std::string miniSaveTarName = "MiniData_" + simDataFileName + ".tar";
+    std::string pictSaveTarName = "PictData_" + simDataFileName + ".tar";
 
     std::string createFullTarCommand = "tar -cf " + fullSaveTarName + " -T /dev/null";
     std::string createMiniTarCommand = "tar -cf " + miniSaveTarName + " -T /dev/null";
