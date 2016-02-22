@@ -48,6 +48,7 @@ public:
     double YukawaK;
 
     bool SaveParticlesInfo;
+    bool SaveEpsPicture;
 
     std::vector<CParticleBase> savedStateToLoad;
 
@@ -74,6 +75,7 @@ public:
         archive(cereal::make_nvp("NumberOfImageLines", NumberOfImageLines));
 
         archive(cereal::make_nvp("SaveParticlesInfo", SaveParticlesInfo));
+        archive(cereal::make_nvp("SaveEpsPicture", SaveEpsPicture));
 
         int initialConfiguration;
         archive(cereal::make_nvp("InitialConfiguration", initialConfiguration));

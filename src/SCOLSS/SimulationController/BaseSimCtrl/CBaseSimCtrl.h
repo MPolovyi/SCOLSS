@@ -42,11 +42,11 @@ public:
     std::uniform_real_distribution<double> initialDisplacementDistribution;
 
     template<class Archive>
-    void save(Archive &archieve) const {
-        archieve(cereal::make_nvp("SimulationParameters", SimulationParameters));
-        archieve(cereal::make_nvp("OrderParameter", GetOrderParameter()));
+    void save(Archive& archive) const {
+        archive(cereal::make_nvp("SimulationParameters", SimulationParameters));
+        archive(cereal::make_nvp("OrderParameter", GetOrderParameter()));
 
-        archieve(cereal::make_nvp("PotentialEnergy", GetAveragePotentialEnergy()));
+        archive(cereal::make_nvp("PotentialEnergy", GetAveragePotentialEnergy()));
 
         if(SimulationParameters.SaveParticlesInfo) {
             std::vector<CParticleBase> pts_save;
@@ -55,9 +55,17 @@ public:
             }
 
             const CParticleBase *tmp = &pts_save[0];
-            archieve.saveBinaryValue(tmp, sizeof(CParticleBase) * particles_old.size(), "Particles");
+            archive.saveBinaryValue(tmp, sizeof(CParticleBase) * particles_old.size(), "Particles");
         }
     };
+
+    template<class Archive>
+    void SaveMinimal(Archive &archive) const {
+        archive(cereal::make_nvp("SimulationParameters", SimulationParameters));
+        archive(cereal::make_nvp("OrderParameter", GetOrderParameter()));
+
+        archive(cereal::make_nvp("PotentialEnergy", GetAveragePotentialEnergy()));
+    }
 
     CBaseSimCtrl(CBaseSimParams d);
 

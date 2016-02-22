@@ -28,10 +28,22 @@ public:
     };
 
     template<class Archive>
-    void save(Archive &archieve) const {
-        archieve(cereal::base_class<CBaseSimCtrl>(this));
-        archieve(cereal::make_nvp("SimulationParameters", SimulationParameters));
-        archieve(cereal::make_nvp("SimulationCycles", Cycles));
+    void save(Archive &archive) const {
+        archive(cereal::base_class<CBaseSimCtrl>(this));
+
+        SaveSpecific(archive);
+    }
+
+    template<class Archive>
+    void SaveMinimal(Archive& archive) const {
+        CBaseSimCtrl::SaveMinimal(archive);
+        SaveSpecific(archive);
+    }
+
+    template<class Archive>
+    void SaveSpecific(Archive &archive) const {
+        archive(cereal::make_nvp("SimulationParameters", SimulationParameters));
+        archive(cereal::make_nvp("SimulationCycles", Cycles));
     }
 
     std::uniform_real_distribution<double> uniformDistributionAcceptance;

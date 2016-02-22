@@ -1,16 +1,16 @@
 {
-  "value0": {
-    "Base": {
-      "Density": 0.75,
-      "InitialConfiguration": 0,
-      "KbT": 2,
-      "LoadSavedState": 0,
-      "NumberOfImageLines": 1,
-      "NumberOfSavePoints": 2000,
-      "PtCount": 1600,
-      "SavedParticles": ""
-    },
-    "CyclesBetweenSaves": 200000,
-    "TimeBetweenSaves": 0.25
-  }
+  "Base": {
+    "Density": 0.75,
+    "InitialConfiguration": 0,
+    "KbT": 2,
+    "LoadSavedState": 0,
+    "NumberOfImageLines": 1,
+    "NumberOfSavePoints": 100,
+    "PtCount": 1600,
+    "SavedParticles": "",
+    "SaveEpsPicture": false,
+    "SaveParticlesInfo": true
+  },
+  "CyclesBetweenSaves": 200000,
+  "TimeBetweenSaves": 1
 }
