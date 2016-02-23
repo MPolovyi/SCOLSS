@@ -26,19 +26,8 @@ public:
     std::normal_distribution<double> rotationNormalDistribution;
 
     template<class Archive>
-    void save(Archive &archive) const {
+    void save(Archive& archive) const {
         archive(cereal::base_class<CBaseSimCtrl>(this));
-        SaveSpecific(archive);
-    }
-
-    template<class Archive>
-    void SaveMinimal(Archive &archive) const {
-        CBaseSimCtrl::SaveMinimal(archive);
-        SaveSpecific(archive);
-    }
-
-    template<class Archive>
-    void SaveSpecific(Archive &archive) const {
         archive(cereal::make_nvp("SimulationParameters", SimulationParameters));
         archive(cereal::make_nvp("SimulationTime", GetSimulationTime()));
         archive(cereal::make_nvp("KineticEnergy", GetAverageKineticEnergy()));

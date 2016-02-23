@@ -59,14 +59,6 @@ public:
         }
     };
 
-    template<class Archive>
-    void SaveMinimal(Archive &archive) const {
-        archive(cereal::make_nvp("SimulationParameters", SimulationParameters));
-        archive(cereal::make_nvp("OrderParameter", GetOrderParameter()));
-
-        archive(cereal::make_nvp("PotentialEnergy", GetAveragePotentialEnergy()));
-    }
-
     CBaseSimCtrl(CBaseSimParams d);
 
     virtual void InitRandomGenerator() {

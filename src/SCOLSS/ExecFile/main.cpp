@@ -152,22 +152,24 @@ void SaveToFile(std::shared_ptr<CBaseSimCtrl> &contr, std::string &fullSaveFileN
                 std::string& fullSaveTarName,
                 std::string& miniSaveTarName) {
     {
-
         std::fstream minimalFileStream((miniSaveFileName + std::to_string(cycle)).c_str(), std::ios_base::out);
-        cereal::JSONOutputArchive minimalFileArchieve(minimalFileStream);
+        cereal::JSONOutputArchive minimalFileArchive(minimalFileStream);
 
         switch (contr->SimulationParameters.SaveParticlesInfo) {
-            case true:
+            case true: {
                 std::fstream mainFileStream((fullSaveFileName + std::to_string(cycle)).c_str(), std::ios_base::out);
-                cereal::JSONOutputArchive mainFileArchieve(mainFileStream);
+                cereal::JSONOutputArchive mainFileArchive(mainFileStream);
 
-                contr->save(mainFileArchieve);
-                contr->SaveMinimal(minimalFileArchieve);
+                mainFileArchive(contr);
+                contr->SimulationParameters.SaveParticlesInfo = false;
+                minimalFileArchive(contr);
+                contr->SimulationParameters.SaveParticlesInfo = true;
                 break;
-
-            case false:
-                contr->save(minimalFileArchieve);
+            }
+            case false: {
+                minimalFileArchive(contr);
                 break;
+            }
         }
     }
 
