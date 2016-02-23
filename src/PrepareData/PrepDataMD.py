@@ -8,7 +8,6 @@ import sys
 import time
 import datetime
 import MiscFunctions
-import uuid
 
 __author__ = 'mpolovyi'
 
@@ -21,11 +20,13 @@ simData = {
         "NumberOfSavePoints": 200,
         "NumberOfImageLines": 1000,
         "PtCount": [100],
-        "SavedParticles": ""
+        "SavedParticles": "",
+        "SaveParticlesInfo": False,
+        "SaveEpsPicture": False
     },
-    "CyclesBetweenSaves": 200000,
+    "CyclesBetweenSaves": 200,
     "TimeBetweenSaves": 0.05,
-    "Queue": "LONG"
+    "Queue": "SHORT"
 }
 
 
@@ -47,7 +48,7 @@ def prompt_for_data(sim_data):
         if len(data) != 0:
             sim_data["Base"]["InitialConfiguration"] = eval(data)
 
-    print(str(sim_data))
+    print(json.dumps(sim_data, indent=2, sort_keys=True))
 
     data = ""
     while len(data) == 0:
@@ -71,26 +72,26 @@ def prompt_for_data(sim_data):
     return samples_count, samples_per_run_count
 
 
-def iterate_over_folders(sim_data, func_list):
+def iterate_over_folders(sim_data, func_list, *args):
     ret = []
 
     for ptc in sim_data["Base"]["PtCount"]:
         for rho in sim_data["Base"]["Density"]:
             for kbt in sim_data["Base"]["KbT"]:
                 for ic in sim_data["Base"]["InitialConfiguration"]:
-                    sim_data_to_save = {"value0": dict(sim_data)}
-                    sim_data_to_save["value0"]["Base"] = dict(sim_data["Base"])
-                    sim_data_to_save["value0"]["Base"]["KbT"] = kbt
-                    sim_data_to_save["value0"]["Base"]["PtCount"] = ptc
-                    sim_data_to_save["value0"]["Base"]["Density"] = rho
-                    sim_data_to_save["value0"]["Base"]["InitialConfiguration"] = ic
+                    sim_data_to_save = dict(sim_data)
+                    sim_data_to_save["Base"] = dict(sim_data["Base"])
+                    sim_data_to_save["Base"]["KbT"] = kbt
+                    sim_data_to_save["Base"]["PtCount"] = ptc
+                    sim_data_to_save["Base"]["Density"] = rho
+                    sim_data_to_save["Base"]["InitialConfiguration"] = ic
 
                     folder_name = "T_{0:.2f}_I_{1:d}_K_{2:.2f}_P_{3:d}_D_{4:.2f}".format(
-                        sim_data_to_save["value0"]["TimeBetweenSaves"],
-                        sim_data_to_save["value0"]["Base"]["InitialConfiguration"], kbt, ptc, rho)
+                        sim_data_to_save["TimeBetweenSaves"],
+                        sim_data_to_save["Base"]["InitialConfiguration"], kbt, ptc, rho)
 
                     for func in func_list:
-                        ret.append(func(folder_name, sim_data_to_save))
+                        ret.append(func(folder_name, sim_data_to_save, args))
 
     return ret
 
@@ -116,33 +117,38 @@ class CreateSampleRunFiles:
 
         run_index_string = str(self.Index)
 
-        run_file_lines = ["#$ -S /bin/sh \n",
-                          "#$ -j y \n",
-                          "#$ -m eas \n",
-                          "#$ -cwd \n",
-                          "#$ -l virtual_free=800M -l h_vmem=800M \n",
-                          "#$ -q {0}\n".format(simData["Queue"]),
-                          "\n",
-                          "cp $SGE_O_WORKDIR/ExecFile $TMPDIR\n",
-                          "cp $SGE_O_WORKDIR/Data_{0}.json $TMPDIR\n".format(run_index_string),
-                          "\n",
-                          "cd $TMPDIR\n",
-                          "(time ./ExecFile Data_{0}.json LD {1}) >&time_{2}.txt\n".format(run_index_string, str(
-                              self.SamplesPerRun), run_index_string),
-                          "find . -type f -name \"Resul*.json*\" > include-file\n",
-                          "find . -type f -name \"Picture*.eps*\" >> include-file\n",
-                          "tar -cpf MD_dipole_{0}.tar -T include-file\n".format(run_index_string),
+        tar_files = "MiniData_Data_{0}.json.tar"
 
-                          "cp MD_dipole_{0}.tar $SGE_O_WORKDIR/\n".format(run_index_string),
-                          "rm *\n",
-                          "cd $SGE_O_WORKDIR\n",
-                          "tar -xf MD_dipole_{0}.tar --wildcards --no-anchored \'*json*\'\n".format(run_index_string)]
+        if sim_data_to_save["Base"]["SaveParticlesInfo"]:
+            tar_files += " FullData_Data_{0}.json.tar"
+
+        if sim_data_to_save["Base"]["SaveEpsPicture"]:
+            tar_files += " PictData_Data_{0}.json.tar"
+
+        run_file_lines = ('#$ -S /bin/sh\n'
+                          '#$ -j y\n'
+                          '#$ -m eas\n'
+                          '#$ -cwd\n'
+                          '#$ -l virtual_free=800M -l h_vmem=800M\n'
+                          '#$ -q {2}\n'
+                          '\n'
+                          'cp $SGE_O_WORKDIR/ExecFile $TMPDIR\n'
+                          'cp $SGE_O_WORKDIR/Data_{0}.json $TMPDIR\n'
+                          '\n'
+                          'cd $TMPDIR\n'
+                          '(time ./ExecFile Data_{0}.json LD {1}) >&time_{0}.txt\n'
+                          'tar -cpf Data_Sample_{0}.tar {3}\n'
+                          '\n'
+                          'cp Data_Sample_{0}.tar $SGE_O_WORKDIR/\n'
+                          'rm *\n'
+                          'cd $SGE_O_WORKDIR\n'
+                          'tar -xf Data_Sample_{0}.tar\n').format("{0}", "{1}", "{2}", tar_files).format(run_index_string, str(self.SamplesPerRun), simData["Queue"])
 
         with open("r{0}".format(run_index_string), "w") as run_file:
-            run_file.writelines(run_file_lines)
+            run_file.write(run_file_lines)
 
-        run_file_name = "DT{0:.2f}_N{1:d}r{2:s}".format(sim_data_to_save["value0"]["Base"]["KbT"],
-                                                        sim_data_to_save["value0"]["Base"]["PtCount"],
+        run_file_name = "DT{0:.2f}_N{1:d}r{2:s}".format(sim_data_to_save["Base"]["KbT"],
+                                                        sim_data_to_save["Base"]["PtCount"],
                                                         run_index_string)
         shutil.move("r{0}".format(run_index_string), os.path.join(folder_name, run_file_name))
         self.RunAllFileLines.append([folder_name, run_file_name])
@@ -159,7 +165,7 @@ def populate_data(sim_data, run_all_file_lines):
     try:
         samplesCount, samplesPerRunCount = prompt_for_data(sim_data)
     except ValueError as err:
-        print(err[0])
+        print(json.dumps(err[0], indent=2, sort_keys=True))
         if err[1]:
             return
 
@@ -173,16 +179,26 @@ def populate_data(sim_data, run_all_file_lines):
         iterate_over_folders(sim_data, [sample_creator])
 
 
-def get_tasks_on_queue():
+def get_tasks_on_queue(match=None):
     qstat = sh.Command("qstat")
     wc = sh.Command("wc")
     grep = sh.Command("grep")
 
-    in_queue = int(wc(grep(qstat(), "-E", ' r| qw'), "-l"))
-    return in_queue
+    if match is None:
+        try:
+            in_queue = int(wc(grep(qstat(), "-E", ' r| qw'), "-l"))
+        except:
+            return 0
+        return in_queue
+    else:
+        try:
+            in_queue = int(wc(grep(qstat(), match), "-l"))
+        except:
+            return 0
+        return in_queue
 
 
-def submit_to_queue(max_on_queue=600):
+def submit_to_queue(run_all_file_lines, max_on_queue=600):
     qsub = sh.Command("qsub")
     for run_line in run_all_file_lines:
         with MiscFunctions.cd(os.path.join("./", run_line[0])):
@@ -198,27 +214,34 @@ def submit_to_queue(max_on_queue=600):
     return int(last_submitted.split(" ")[2])
 
 
-def archive_results_from_folder(*args):
+def create_task_to_archive_results_from_folder(*args):
     folder_name = args[0]
+    sim_data = args[1]
 
-    include_file_name = str(uuid.uuid4())
     print "Writing results form folder {0} to include file".format(folder_name)
-    with open(include_file_name, "w") as include_file:
-        for root, dirs, files in os.walk(os.path.join(os.getcwd(), folder_name)):
-            dirs.sort()
-            files.sort()
 
-            for file_name in files:
-                if file_name.startswith("Resul"):
-                    include_file.write(os.path.join(root, file_name) + "\n")
+    tar_save_lines = 'tar -cpf MD_Mini_{0}.tar.gz ./{0}/MiniData*.tar\n'
 
-    print "Archiving results form folder {0}".format(folder_name)
+    if sim_data["Base"]["SaveParticlesInfo"]:
+        tar_save_lines += ' tar -czpf MD_Full_{0}.tar ./{0}/FullData*.tar\n'
 
-    tar = sh.Command("tar")
-    tar_file_name = "MD{0}.tar.gz".format(folder_name)
+    if sim_data["Base"]["SaveEpsPicture"]:
+        tar_save_lines += ' tar -cpf MD_Pics_{0}.tar.gz ./{0}/PicsData*.tar\n'
 
-    tar("-czpf", tar_file_name, "-T", include_file_name)
-    return os.path.join(os.getcwd(), tar_file_name)
+    run_file_lines = ('\n'
+                      '#$ -S /bin/sh\n'
+                      '#$ -j y\n'
+                      '#$ -m eas\n'
+                      '#$ -cwd\n'
+                      '#$ -l virtual_free=800M -l h_vmem=800M\n'
+                      '#$ -q SHORT\n'
+                      '\n'
+                      '{0}').format(tar_save_lines).format(folder_name)
+
+    with open("SaveData_{0}".format(folder_name), "w") as sub_file:
+        sub_file.write(run_file_lines)
+
+    return os.getcwd(), "SaveData_{0}".format(folder_name)
 
 
 def save_data(last_submitted, sim_data):
@@ -229,29 +252,81 @@ def save_data(last_submitted, sim_data):
 
     while are_on_queue:
         try:
-            grep(qstat(), last_submitted)
+            grep(qstat(), str(last_submitted))
             print "{0} submitted last still on queue," \
                   " waiting 20 min from {1}".format(last_submitted, datetime.datetime.now().time())
             time.sleep(1 * 60)
         except:
             are_on_queue = False
 
-    return iterate_over_folders(sim_data, [archive_results_from_folder])
+    save_all_file_lines = iterate_over_folders(sim_data, [create_task_to_archive_results_from_folder])
+
+    last_saver = submit_to_queue(save_all_file_lines)
+
+    are_on_queue = True
+    while are_on_queue:
+        try:
+            grep(qstat(), str(last_saver))
+            print "{0} saver still on queue," \
+                  " waiting 20 min from {1}".format(last_submitted, datetime.datetime.now().time())
+            time.sleep(1 * 60)
+        except:
+            are_on_queue = False
 
 
-def create_data_saved_file(tar_file_names):
-    if os.path.exists("data_saved"):
-        print "Previous saved data exists, download it! \n" \
+def create_min_tar_names(*args):
+    return "MD_Mini_{0}.tar.gz".format(args[0])
+
+
+def create_full_tar_names(*args):
+    return "MD_Full_{0}.tar.gz".format(args[0])
+
+
+def create_pics_tar_names(*args):
+    return "MD_Pics_{0}.tar.gz".format(args[0])
+
+
+def create_data_saved_files(sim_data):
+    if os.path.exists("mini_data_saved"):
+        print "Previous saved MINI data exists, download it! \n" \
               " waiting 20 min from {0}".format(datetime.datetime.now().time())
-        time.sleep(60*1)
+        time.sleep(20 * 60)
     else:
-        with open("data_saved.tmp", "w") as data_saved:
-            for name in tar_file_names:
-                data_saved.write("scp grace:" + name + "\n")
-                data_saved.write("tar -xf" + name.split("/")[len(name.split("/"))-1] + "\n")
+        iterate_over_folders(sim_data, [])
+        with open("mini_data_saved.tmp", "w") as data_saved:
+            for name in iterate_over_folders(sim_data, [create_min_tar_names]):
+                data_saved.write("scp grace:" + os.path.join(os.getcwd(), name) + " " + name + "\n")
+                data_saved.write("tar -xf " + name + "\n")
 
-        shutil.move("data_saved.tmp", "data_saved")
+        shutil.move("mini_data_saved.tmp", "mini_data_saved")
 
+    if sim_data["Base"]["SaveParticlesInfo"]:
+        if os.path.exists("full_data_saved"):
+            print "Previous saved FULL data exists, download it! \n" \
+                  " waiting 20 min from {0}".format(datetime.datetime.now().time())
+            time.sleep(1 * 60)
+        else:
+            iterate_over_folders(sim_data, [])
+            with open("full_data_saved.tmp", "w") as data_saved:
+                for name in iterate_over_folders(sim_data, [create_min_tar_names]):
+                    data_saved.write("scp grace:" + os.path.join(os.getcwd(), name) + " " + name + "\n")
+                    data_saved.write("tar -xf " + name + "\n")
+
+            shutil.move("full_data_saved.tmp", "full_data_saved")
+
+    if sim_data["Base"]["SaveEpsPicture"]:
+        if os.path.exists("pics_data_saved"):
+            print "Previous saved PICTURES data exists, download it! \n" \
+                  " waiting 20 min from {0}".format(datetime.datetime.now().time())
+            time.sleep(1 * 60)
+        else:
+            iterate_over_folders(sim_data, [])
+            with open("pics_data_saved.tmp", "w") as data_saved:
+                for name in iterate_over_folders(sim_data, [create_min_tar_names]):
+                    data_saved.write("scp grace:" + os.path.join(os.getcwd(), name) + " " + name + "\n")
+                    data_saved.write("tar -xf " + name + "\n")
+
+            shutil.move("pics_data_saved.tmp", "pics_data_saved")
 
 if __name__ == "__main__":
     run_all_file_lines = []
@@ -259,6 +334,6 @@ if __name__ == "__main__":
 
     data = ""
 
-    last_submitted = submit_to_queue()
-    tar_file_names = save_data(last_submitted, simData)
-    create_data_saved_file(tar_file_names)
+    last_submitted = submit_to_queue(run_all_file_lines)
+    save_data(last_submitted, simData)
+    create_data_saved_files(simData)
