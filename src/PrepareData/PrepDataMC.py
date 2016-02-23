@@ -13,20 +13,20 @@ __author__ = 'mpolovyi'
 
 simData = {
     "Base": {
-        "Density": [0.1],
-        "InitialConfiguration": [2],
-        "KbT": [0.1],
+        "Density": [0.25, 0.5, 0.75],
+        "InitialConfiguration": [0],
+        "KbT": [0.6, 1.2, 1.8],
         "LoadSavedState": 0,
-        "NumberOfSavePoints": 200,
-        "NumberOfImageLines": 1000,
-        "PtCount": [100],
+        "NumberOfSavePoints": 100,
+        "NumberOfImageLines": 1,
+        "PtCount": [3200],
         "SavedParticles": "",
-        "SaveParticlesInfo": False,
+        "SaveParticlesInfo": True,
         "SaveEpsPicture": False
     },
-    "CyclesBetweenSaves": 200,
-    "TimeBetweenSaves": 0.05,
-    "Queue": "SHORT"
+    "CyclesBetweenSaves": 200000,
+    "TimeBetweenSaves": 0.25,
+    "Queue": "LONG"
 }
 
 
@@ -165,7 +165,7 @@ def populate_data(sim_data, run_all_file_lines):
     try:
         samplesCount, samplesPerRunCount = prompt_for_data(sim_data)
     except ValueError as err:
-        print(err[0])
+        print(json.dumps(err[0], indent=2, sort_keys=True))
         if err[1]:
             return
 
@@ -220,10 +220,10 @@ def create_task_to_archive_results_from_folder(*args):
 
     print "Writing results form folder {0} to include file".format(folder_name)
 
-    tar_save_lines = 'tar -cpf MC_Mini_{0}.tar.gz ./{0}/MiniData*.tar\n'
+    tar_save_lines = 'tar -cpf MC_Mini_{0}.tar ./{0}/MiniData*.tar\n'
 
     if sim_data["Base"]["SaveParticlesInfo"]:
-        tar_save_lines += ' tar -czpf MC_Full_{0}.tar ./{0}/FullData*.tar\n'
+        tar_save_lines += ' tar -czpf MC_Full_{0}.tar.gz ./{0}/FullData*.tar\n'
 
     if sim_data["Base"]["SaveEpsPicture"]:
         tar_save_lines += ' tar -cpf MC_Pics_{0}.tar.gz ./{0}/PicsData*.tar\n'
@@ -236,7 +236,8 @@ def create_task_to_archive_results_from_folder(*args):
                       '#$ -l virtual_free=800M -l h_vmem=800M\n'
                       '#$ -q SHORT\n'
                       '\n'
-                      '{0}').format(tar_save_lines).format(folder_name)
+                      '{0}\n'
+                      'rm SaveData_{1}*').format(tar_save_lines, folder_name).format(folder_name)
 
     with open("SaveData_{0}".format(folder_name), "w") as sub_file:
         sub_file.write(run_file_lines)
@@ -275,7 +276,7 @@ def save_data(last_submitted, sim_data):
 
 
 def create_min_tar_names(*args):
-    return "MC_Mini_{0}.tar.gz".format(args[0])
+    return "MC_Mini_{0}.tar".format(args[0])
 
 
 def create_full_tar_names(*args):
@@ -297,6 +298,7 @@ def create_data_saved_files(sim_data):
             for name in iterate_over_folders(sim_data, [create_min_tar_names]):
                 data_saved.write("scp grace:" + os.path.join(os.getcwd(), name) + " " + name + "\n")
                 data_saved.write("tar -xf " + name + "\n")
+                data_saved.write("rm " + name + "\n")
 
         shutil.move("mini_data_saved.tmp", "mini_data_saved")
 
@@ -311,6 +313,7 @@ def create_data_saved_files(sim_data):
                 for name in iterate_over_folders(sim_data, [create_min_tar_names]):
                     data_saved.write("scp grace:" + os.path.join(os.getcwd(), name) + " " + name + "\n")
                     data_saved.write("tar -xf " + name + "\n")
+                    data_saved.write("rm " + name + "\n")
 
             shutil.move("full_data_saved.tmp", "full_data_saved")
 
@@ -325,6 +328,7 @@ def create_data_saved_files(sim_data):
                 for name in iterate_over_folders(sim_data, [create_min_tar_names]):
                     data_saved.write("scp grace:" + os.path.join(os.getcwd(), name) + " " + name + "\n")
                     data_saved.write("tar -xf " + name + "\n")
+                    data_saved.write("rm " + name + "\n")
 
             shutil.move("pics_data_saved.tmp", "pics_data_saved")
 
