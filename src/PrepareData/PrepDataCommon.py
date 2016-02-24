@@ -195,7 +195,7 @@ class CreateSampleRunFiles:
                           'rm *\n'
                           'cd $SGE_O_WORKDIR\n'
                           'tar -xf Data_Sample_{0}.tar\n'
-                          'rm Data_Sample_{0}.tar\n').format("{0}", "{1}", "{2}", tar_files, "{4}").format(run_index_string, str(self.SamplesPerRun), simData["Queue"], self.SimulationType)
+                          'rm Data_Sample_{0}.tar\n').format("{0}", "{1}", "{2}", tar_files, "{3}").format(run_index_string, str(self.SamplesPerRun), sim_data_to_save["Queue"], self.SimulationType)
 
         temp_run_file_name = "r{0}".format(run_index_string)
         with open(temp_run_file_name, "w") as run_file:

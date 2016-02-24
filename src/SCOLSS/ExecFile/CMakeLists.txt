@@ -1,5 +1,7 @@
 set(EXEC_FILE_SOURCES
         main.cpp
+        CTarball.cpp
+        CTarball.h
         )
 
 add_executable(ExecFile ${EXEC_FILE_SOURCES})

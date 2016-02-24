@@ -5,12 +5,12 @@
     "KbT": 2,
     "LoadSavedState": 0,
     "NumberOfImageLines": 1,
-    "NumberOfSavePoints": 1000,
+    "NumberOfSavePoints": 100000,
     "PtCount": 100,
     "SavedParticles": "",
     "SaveEpsPicture": false,
     "SaveParticlesInfo": true
   },
   "CyclesBetweenSaves": 200000,
-  "TimeBetweenSaves": 0.25
+  "TimeBetweenSaves": 0.05
 }
