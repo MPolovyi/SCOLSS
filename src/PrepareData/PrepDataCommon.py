@@ -118,11 +118,11 @@ def folder_name_generator(sim_data, sim_type):
 
     elif sim_type == "MC":
         return "C_{0:d}_I_{1:d}_K_{2:.2f}_P_{3:d}_D_{4:.2f}".format(
-        sim_data["CyclesBetweenSaves"],
-        sim_data["Base"]["InitialConfiguration"],
-        sim_data["Base"]["KbT"],
-        sim_data["Base"]["PtCount"],
-        sim_data["Base"]["Density"])
+            sim_data["CyclesBetweenSaves"],
+            sim_data["Base"]["InitialConfiguration"],
+            sim_data["Base"]["KbT"],
+            sim_data["Base"]["PtCount"],
+            sim_data["Base"]["Density"])
 
 
 def iterate_over_folders(full_sim_data, func_list, sim_type, *args):
@@ -172,38 +172,68 @@ class CreateSampleRunFiles:
         tar_files = "MiniData_Data_{0}.json.tar"
 
         if sim_data_to_save["Base"]["SaveParticlesInfo"]:
-            tar_files += " FullData_Data_{0}.json.tar"
+            save_full_data = "1"
+        else:
+            save_full_data = "0"
 
         if sim_data_to_save["Base"]["SaveEpsPicture"]:
-            tar_files += " PictData_Data_{0}.json.tar"
+            save_pics_data = "1"
+        else:
+            save_pics_data = "0"
 
         run_file_lines = ('#$ -S /bin/sh\n'
                           '#$ -j y\n'
                           '#$ -m eas\n'
                           '#$ -cwd\n'
                           '#$ -l virtual_free=800M -l h_vmem=800M\n'
-                          '#$ -q {2}\n'
+                          '#$ -q {0}\n'
+                          '\n'
+                          'MAX_NUMBER_OF_CP=5\n'
+                          '\n'
+                          'function limited_copy {{'
+                          '  # arguments:\n'
+                          '  # $1 = from\n'
+                          '  # $2 = to\n'
+                          '  # $3 = sleep time (optional)\n'
+                          '\n'
+                          '  NUMBER_OF_CP_ACTIVE=$(ps -A | grep " cp" | wc -l)\n'
+                          '\n'
+                          '  while [[ NUMBER_OF_CP_ACTIVE -gt MAX_NUMBER_OF_CP ]]; do\n'
+                          '    sleep ${{3:-20s}}  \n'
+                          '    NUMBER_OF_CP_ACTIVE=$(ps -U mpolovyi | grep " cp" | wc -l)\n'
+                          '  done\n'
+                          '\n'
+                          '  cp ${{1}} ${{2}}\n'
+                          '}}\n'
                           '\n'
                           'cp $SGE_O_WORKDIR/ExecFile $TMPDIR\n'
-                          'cp $SGE_O_WORKDIR/Data_{0}.json $TMPDIR\n'
+                          '\n'
+                          'limited_copy $SGE_O_WORKDIR/Data_{1}.json $TMPDIR\n'
                           '\n'
                           'cd $TMPDIR\n'
-                          '(time ./ExecFile Data_{0}.json {4} {1}) >&time_{0}.txt\n'
-                          'tar -cpf Data_Sample_{0}.tar {3}\n'
+                          '(time ./ExecFile Data_{1}.json {2} {3}) >&time_{1}.txt\n'
                           '\n'
-                          'cp Data_Sample_{0}.tar $SGE_O_WORKDIR/\n'
+                          'cp MiniData_Data_{0}.json.tar $SGE_O_WORKDIR\n'
+                          '\n'
+                          'if [[ {4} ]]; then\n'
+                          '  limited_copy FullData_Data_{0}.json.tar $SGE_O_WORKDIR 5m\n'
+                          'fi\n'
+                          '\n'
+                          'if [[ {5} ]]; then\n'
+                          '  limited_copy PicsData_Data_{0}.json.tar $SGE_O_WORKDIR 5m\n'
+                          'fi\n'
+                          '\n'
                           'rm *\n'
-                          'cd $SGE_O_WORKDIR\n'
-                          'tar -xf Data_Sample_{0}.tar\n'
-                          'rm Data_Sample_{0}.tar\n').format("{0}", "{1}", "{2}", tar_files, "{3}").format(run_index_string, str(self.SamplesPerRun), sim_data_to_save["Queue"], self.SimulationType)
+                          ).format(sim_data_to_save["Queue"], run_index_string, self.SimulationType,
+                                   str(self.SamplesPerRun), save_full_data, save_pics_data)
 
         temp_run_file_name = "r{0}".format(run_index_string)
         with open(temp_run_file_name, "w") as run_file:
             run_file.write(run_file_lines)
 
         run_file_name = "{3}T{0:.2f}_N{1:d}r{2:s}".format(sim_data_to_save["Base"]["KbT"],
-                                                        sim_data_to_save["Base"]["PtCount"],
-                                                        run_index_string, self.SimulationType)
+                                                          sim_data_to_save["Base"]["PtCount"],
+                                                          run_index_string, self.SimulationType)
 
         shutil.move(temp_run_file_name, os.path.join(folder_name, run_file_name))
         self.FolderScriptPairs.append((folder_name, run_file_name))
@@ -243,13 +273,13 @@ def create_task_to_archive_results_from_folder_md(*args):
 
     print "Writing results form folder {0} to include file".format(folder_name)
 
-    tar_save_lines = 'tar -cpf '+ sim_type + '_Mini_{0}.tar ./{0}/MiniData*.tar\n'
+    tar_save_lines = 'tar -czpf ' + sim_type + '_Mini_{0}.tar ./{0}/MiniData*.tar\n'
 
     if sim_data["Base"]["SaveParticlesInfo"]:
-        tar_save_lines += ' tar -czpf '+ sim_type + '_Full_{0}.tar.gz ./{0}/FullData*.tar\n'
+        tar_save_lines += ' tar -czpf ' + sim_type + '_Full_{0}.tar.gz ./{0}/FullData*.tar\n'
 
     if sim_data["Base"]["SaveEpsPicture"]:
-        tar_save_lines += ' tar -cpf '+ sim_type + '_Pics_{0}.tar.gz ./{0}/PicsData*.tar\n'
+        tar_save_lines += ' tar -cpf ' + sim_type + '_Pics_{0}.tar.gz ./{0}/PicsData*.tar\n'
 
     run_file_lines = ('\n'
                       '#$ -S /bin/sh\n'
@@ -283,20 +313,22 @@ def save_data(last_submitted, sim_data, sim_type):
         except:
             are_on_queue = False
 
-    saver_folder_script_pairs = iterate_over_folders(sim_data, [create_task_to_archive_results_from_folder_md], sim_type)
+    tar = sh.Command("tar")
 
-    last_saver = submit_to_queue(saver_folder_script_pairs)
+    for name in iterate_over_folders(sim_data, [create_mini_tar_names], sim_type):
+        tar("-czpf", name, "./T_*/Mini*.tar")
 
-    are_on_queue = True
-
-    while are_on_queue:
+    for name in iterate_over_folders(sim_data, [create_full_tar_names], sim_type):
         try:
-            grep(qstat(), str(last_saver))
-            print "{0} saver still on queue," \
-                  " waiting 20 min from {1}".format(last_submitted, datetime.datetime.now().time())
-            time.sleep(20 * 60)
+            tar("-czpf", name, "./T_*/Full*.tar")
         except:
-            are_on_queue = False
+            pass
+
+    for name in iterate_over_folders(sim_data, [create_pics_tar_names], sim_type):
+        try:
+            tar("-czpf", name, "./T_*/Pics*.tar")
+        except:
+            pass
 
 
 def create_mini_tar_names(*args):
@@ -312,8 +344,7 @@ def create_pics_tar_names(*args):
 
 
 def create_data_saved_files(sim_data, sim_type):
-    if os.path.exists("mini_data_saved"):
-        create_data_saved_file(sim_data, sim_type, create_mini_tar_names, "mini_data_saved")
+    create_data_saved_file(sim_data, sim_type, create_mini_tar_names, "mini_data_saved")
 
     if sim_data["Base"]["SaveParticlesInfo"]:
         create_data_saved_file(sim_data, sim_type, create_full_tar_names, "full_data_saved")
@@ -325,13 +356,13 @@ def create_data_saved_files(sim_data, sim_type):
 def create_data_saved_file(sim_data, sim_type, name_creator, save_file_name):
     if os.path.exists(save_file_name):
         print "Previous saved {1} data exists, download it! \n" \
-                  " waiting 20 min from {0}".format(datetime.datetime.now().time(), save_file_name.upper())
+              " waiting 20 min from {0}".format(datetime.datetime.now().time(), save_file_name.upper())
         time.sleep(20 * 60)
     else:
         with open(save_file_name + ".tmp", "w") as data_saved:
             for name in iterate_over_folders(sim_data, [name_creator], sim_type):
                 data_saved.write("scp grace:" + os.path.join(os.getcwd(), name) + " " + name + "\n")
-                data_saved.write("tar -xf " + name + "\n")
+                data_saved.write("tar -xzf " + name + "\n")
                 data_saved.write("rm " + name + "\n")
 
         shutil.move(save_file_name + ".tmp", save_file_name)
