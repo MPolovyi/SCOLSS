@@ -315,32 +315,35 @@ def save_data(last_submitted, sim_data, sim_type):
 
     tar = sh.Command("tar")
 
-    for name in iterate_over_folders(sim_data, [create_mini_tar_names], sim_type):
-        tar("-czpf", name, "./T_*/Mini*.tar")
+    for name, tar_pattern in iterate_over_folders(sim_data, [create_mini_tar_names], sim_type):
+        tar("-czpf", name, tar_pattern)
 
-    for name in iterate_over_folders(sim_data, [create_full_tar_names], sim_type):
+    for name, tar_pattern in iterate_over_folders(sim_data, [create_full_tar_names], sim_type):
         try:
-            tar("-czpf", name, "./T_*/Full*.tar")
+            tar("-czpf", name, tar_pattern)
         except:
             pass
 
-    for name in iterate_over_folders(sim_data, [create_pics_tar_names], sim_type):
+    for name, tar_pattern in iterate_over_folders(sim_data, [create_pics_tar_names], sim_type):
         try:
-            tar("-czpf", name, "./T_*/Pics*.tar")
+            tar("-czpf", name, tar_pattern)
         except:
             pass
 
 
 def create_mini_tar_names(*args):
-    return "{1}_Mini_{0}.tar".format(args[0], args[2])
+    folder_name = args[0]
+    return "{0}_Mini_{1}.tar".format(args[2], folder_name), "./{0}/Mini*.tar".format(folder_name)
 
 
 def create_full_tar_names(*args):
-    return "{1}_Full_{0}.tar.gz".format(args[0], args[2])
+    folder_name = args[0]
+    return "{0}_Full_{1}.tar.gz".format(args[2], folder_name), "./{0}/Full*.tar".format(folder_name)
 
 
 def create_pics_tar_names(*args):
-    return "{1}_Pics_{0}.tar.gz".format(args[0], args[2])
+    folder_name = args[0]
+    return "{0}_Pics_{1}.tar.gz".format(args[2], folder_name), "./{0}/Pics*.tar".format(folder_name)
 
 
 def create_data_saved_files(sim_data, sim_type):
