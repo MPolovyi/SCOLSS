@@ -14,7 +14,7 @@
 #include "cereal/archives/binary.hpp"
 #include "cereal/types/vector.hpp"
 
-std::vector<CParticleBase> LoadParticles(std::string pString, size_t PtCount) {
+std::vector<CParticleBase> LoadParticles(std::string pString, int PtCount) {
     std::stringstream in_stream;
 
     in_stream << "{\"value0\": \"";
@@ -291,6 +291,62 @@ extern "C" void Function_GetChainOrientationProbabilityEnergy(char ** input_stri
             corr_counts_out[6] += chainLength;
             chainLength = 0;
         }
+    }
+}
+
+bool IsLeft(double cosAngle, double cutOff){
+    return cosAngle < -cutOff;
+}
+bool IsRight(double cosAngle, double cutOff){
+    return cosAngle > cutOff;
+}
+bool IsUndefined(double cosAngle, double cutOff){
+    return cosAngle < cutOff && cosAngle > -cutOff;
+};
+
+int MapOrientation(double cosThis, double cosNext, double cutOff){
+    if(IsLeft(cosThis, cutOff) && IsLeft(cosNext, cutOff)){ return 0; }
+    if(IsLeft(cosThis, cutOff) && IsRight(cosNext, cutOff)){ return 1; }
+    if(IsLeft(cosThis, cutOff) && IsUndefined(cosNext, cutOff)){ return 2; }
+
+    if(IsRight(cosThis, cutOff) && IsLeft(cosNext, cutOff)){ return 3; }
+    if(IsRight(cosThis, cutOff) && IsRight(cosNext, cutOff)){ return 4; }
+    if(IsRight(cosThis, cutOff) && IsUndefined(cosNext, cutOff)){ return 5; }
+
+    if(IsUndefined(cosThis, cutOff) && IsLeft(cosNext, cutOff)){ return 6; }
+    if(IsUndefined(cosThis, cutOff) && IsRight(cosNext, cutOff)){ return 7; }
+    if(IsUndefined(cosThis, cutOff) && IsUndefined(cosNext, cutOff)){ return 8; }
+
+    return 999;
+}
+
+extern "C" void Function_GetChainOrientationProbabilityAngle(int*breaks_counts,
+                                                             int*chain_counts,
+                                                             char ** input_string,
+                                                             int*_ptCount,
+                                                             double*  _angleCutOff, double* _distanceCutOff) {
+
+    int ptCount = _ptCount[0];
+    double angleCutOff = _angleCutOff[0];
+    double distanceCutOff = _distanceCutOff[0];
+
+    std::vector<CParticleBase> particles = LoadParticles(*input_string, ptCount);
+
+    int chainLength = 0;
+
+    for (int i = 0; i < particles.size(); i++) {
+        auto cosThis = particles[i].GetOrientation().Z;
+        auto cosNext = particles[get_next(i, ptCount)].GetOrientation().Z;
+
+
+        if ((MapOrientation(cosThis, cosNext, angleCutOff) == 0 || MapOrientation(cosThis, cosNext, angleCutOff) == 4)
+            && particles[i].GetDistanceRight(particles[get_next(i, ptCount)], 10000).GetLength() < distanceCutOff) {
+            chainLength++;
+        } else {
+            chain_counts[chainLength]++;
+            breaks_counts[MapOrientation(cosThis, cosNext, angleCutOff)]++;
+        }
+
     }
 }
 
@@ -626,4 +682,24 @@ extern "C" void Function_GetDynamicChains(double *neigh_c,
 
         coords_first[i] = particles[0][i].Coordinates;
     }
+}
+
+
+extern "C" void Function_AutoCorrelation(double * averAutoCorr,
+                                         int* sampleIndex,
+                                         char ** zero_configuration,
+                                         char ** current_configuration,
+                                         int *_ptCount) {
+    int ptCount = *_ptCount;
+
+    auto zero_config = LoadParticles(*zero_configuration, ptCount);
+    auto current_config = LoadParticles(*current_configuration, ptCount);
+
+    double corr = 0;
+
+    for (int i = 0; i < ptCount; ++i) {
+        corr += zero_config[i].GetOrientation().DotProduct(current_config[i].GetOrientation());
+    }
+
+    averAutoCorr[*sampleIndex] = corr/(double)ptCount;
 }

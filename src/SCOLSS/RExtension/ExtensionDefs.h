@@ -47,6 +47,12 @@ extern "C" void Function_GetChainOrientationProbabilityEnergy(char ** input_stri
                                                               double* corr_lengths_out,
                                                               double* _systemSize);
 
+extern "C" void Function_GetChainOrientationProbabilityAngle(int*breaks_counts,
+                                                             int*chain_counts,
+                                                             char ** input_string,
+                                                             int*_ptCount,
+                                                             double*  _angleCutOff, double* _distanceCutOff);
+
 extern "C" void Function_GetDynamicChains(double *neigh_c,
                                           double *coords_first,
                                           int *chained,
@@ -70,5 +76,7 @@ extern "C" void Function_GetChainOrientationProbabilityTest(char ** input_string
                                                             double* _systemSize);
 
 extern "C" void Function_UnwrapBinary(char ** input_string, int* in_size, double * ret);
+
+extern "C" void Function_AutoCorrelation(double * averAutoCorr, int* sampleIndex, char ** zero_configuration, char ** current_configuration, int * ptCount);
 
 #endif //PROJECT_EXTENSIONDEFS_H
