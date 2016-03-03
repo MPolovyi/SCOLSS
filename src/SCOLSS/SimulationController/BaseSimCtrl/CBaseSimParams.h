@@ -21,7 +21,8 @@ enum EInitialConfiguration {
     Aligned = 1,
     AlignedTwoSides = 2,
     AlingnedUnmoving = 3,
-    RandomUnmoving = 4
+    RandomUnmoving = 4,
+    OneCluster = 5
 };
 
 class CBaseSimParams {

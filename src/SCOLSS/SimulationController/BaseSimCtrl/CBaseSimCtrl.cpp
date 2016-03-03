@@ -51,6 +51,10 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
                 pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
                 break;
             }
+            case EInitialConfiguration::OneCluster: {
+                pt.SetRotation(CQuaternion(0, CVector::AxisZ));
+                pt.Coordinates = SimulationParameters.SystemSize/4 + SimulationParameters.ParticleDiameter*i;
+            }
         }
         particles_new.push_back(pt);
         particles_old.push_back(pt);
