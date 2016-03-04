@@ -172,14 +172,14 @@ class CreateSampleRunFiles:
         tar_files = "MiniData_Data_{0}.json.tar"
 
         if sim_data_to_save["Base"]["SaveParticlesInfo"]:
-            save_full_data = "1"
+            save_full_data = "true"
         else:
-            save_full_data = "0"
+            save_full_data = "false"
 
         if sim_data_to_save["Base"]["SaveEpsPicture"]:
-            save_pics_data = "1"
+            save_pics_data = "true"
         else:
-            save_pics_data = "0"
+            save_pics_data = "false"
 
         run_file_lines = ('#$ -S /bin/sh\n'
                           '#$ -j y\n'
@@ -215,11 +215,11 @@ class CreateSampleRunFiles:
                           '\n'
                           'cp MiniData_Data_{1}.json.tar $SGE_O_WORKDIR\n'
                           '\n'
-                          'if [[ {4} ]]; then\n'
+                          'if {4}; then\n'
                           '  limited_copy FullData_Data_{1}.json.tar $SGE_O_WORKDIR 5m\n'
                           'fi\n'
                           '\n'
-                          'if [[ {5} ]]; then\n'
+                          'if {5}; then\n'
                           '  limited_copy PicsData_Data_{1}.json.tar $SGE_O_WORKDIR 5m\n'
                           'fi\n'
                           '\n'

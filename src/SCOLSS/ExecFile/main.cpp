@@ -91,10 +91,10 @@ void InitializeSimulations(int argc, char **argv) {
                        pictTarBall);
 
         std::cout << i << std::endl;
-        fullTarBall.finish();
-        miniTarBall.finish();
-        pictTarBall.finish();
     }
+    fullTarBall.finish();
+    miniTarBall.finish();
+    pictTarBall.finish();
 }
 
 void RunSimulations(std::shared_ptr<CBaseSimCtrl> sim,

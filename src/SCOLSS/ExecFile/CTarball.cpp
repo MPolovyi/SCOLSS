@@ -143,6 +143,12 @@ void Tar::put(const char* filename, const char* content,std::size_t len) {
 }
 
 void Tar::putFile(const char* filename, const char* nameInArchive) {
+    if (_finished){
+        std::stringstream exc_string;
+        exc_string << "The archieve " << filename << " is closed!";
+        throw MyException(exc_string.str());
+    }
+
     if (nullptr == nameInArchive){
         nameInArchive = filename;
     }
