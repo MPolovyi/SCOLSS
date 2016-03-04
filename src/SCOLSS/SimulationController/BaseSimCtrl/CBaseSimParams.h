@@ -22,7 +22,9 @@ enum EInitialConfiguration {
     AlignedTwoSides = 2,
     AlingnedUnmoving = 3,
     RandomUnmoving = 4,
-    OneCluster = 5
+    OneCluster = 5,
+    First = Random,
+    Last = OneCluster
 };
 
 class CBaseSimParams {
@@ -81,11 +83,11 @@ public:
         int initialConfiguration;
         archive(cereal::make_nvp("InitialConfiguration", initialConfiguration));
 
-        if (initialConfiguration <= 4){
+        if (initialConfiguration <= EInitialConfiguration::Last){
             InitialConfiguration = (EInitialConfiguration) initialConfiguration;
         }
         else {
-            InitialConfiguration = (EInitialConfiguration) 0;
+            InitialConfiguration = EInitialConfiguration::Random;
         }
 
         auto Interaction = InteractionFunction(1/KbT, YukawaA, YukawaK, 90);

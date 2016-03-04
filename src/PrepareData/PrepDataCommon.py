@@ -333,17 +333,17 @@ def save_data(last_submitted, sim_data, sim_type):
 
 def create_mini_tar_names(*args):
     folder_name = args[0]
-    return "{0}_Mini_{1}.tar".format(args[2], folder_name), "./{0}/Mini*.tar".format(folder_name)
+    return "{0}_Mini_{1}.tar".format(args[2], folder_name), "./{0}/Mini*".format(folder_name)
 
 
 def create_full_tar_names(*args):
     folder_name = args[0]
-    return "{0}_Full_{1}.tar.gz".format(args[2], folder_name), "./{0}/Full*.tar".format(folder_name)
+    return "{0}_Full_{1}.tar.gz".format(args[2], folder_name), "./{0}/Full*".format(folder_name)
 
 
 def create_pics_tar_names(*args):
     folder_name = args[0]
-    return "{0}_Pics_{1}.tar.gz".format(args[2], folder_name), "./{0}/Pics*.tar".format(folder_name)
+    return "{0}_Pics_{1}.tar.gz".format(args[2], folder_name), "./{0}/Pics*".format(folder_name)
 
 
 def create_data_saved_files(sim_data, sim_type):
