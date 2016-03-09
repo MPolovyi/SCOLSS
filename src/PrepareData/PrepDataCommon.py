@@ -333,7 +333,7 @@ def save_data(last_submitted, sim_data, sim_type):
 
 def create_mini_tar_names(*args):
     folder_name = args[0]
-    return "{0}_Mini_{1}.tar".format(args[2], folder_name), "./{0}/Mini*".format(folder_name)
+    return "{0}_Mini_{1}.tar.gz".format(args[2], folder_name), "./{0}/Mini*".format(folder_name)
 
 
 def create_full_tar_names(*args):

@@ -704,26 +704,21 @@ extern "C" void Function_AutoCorrelation(double * averAutoCorr,
     averAutoCorr[*sampleIndex] = corr/(double)ptCount;
 }
 
-extern "C" void Function_AutoCorrelationInCluster(double * averAutoCorr,
+extern "C" void Function_AutoCorrelationInCluster(double *_averAutoCorr,
                                                   char ** zero_configuration,
                                                   char ** current_configuration,
                                                   int * _ptCount,
-                                                  int * _blocksCount){
-    int ptCount = *_ptCount;
-    int blocksCount = *_blocksCount;
-    int blockSize = ptCount/blocksCount;
+                                                  int * _ptIndexes,
+                                                  int * _ptIndexCount){
 
-    auto zero_config = LoadParticles(*zero_configuration, ptCount);
-    auto current_config = LoadParticles(*current_configuration, ptCount);
+    auto zero_config = LoadParticles(*zero_configuration, *_ptCount);
+    auto current_config = LoadParticles(*current_configuration, *_ptCount);
 
-    std::vector<double> corrs;
-    corrs.resize(blocksCount, 0);
+    double corrs = 0;
 
-    for (int i = 0; i < ptCount; ++i) {
-        corrs[i/blockSize] += zero_config[i].GetOrientation().DotProduct(current_config[i].GetOrientation());
+    for (int i = 0; i < *_ptIndexCount; ++i) {
+        corrs += zero_config[_ptIndexes[i]].GetOrientation().DotProduct(current_config[_ptIndexes[i]].GetOrientation());
     }
 
-    for (int j = 0; j < blocksCount; ++j) {
-        averAutoCorr[j] += corrs[j]/ptCount;
-    }
+    *_averAutoCorr = corrs/((double)*_ptIndexCount);
 }
