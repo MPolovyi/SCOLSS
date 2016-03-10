@@ -22,7 +22,7 @@ class CMonteCarloSimCtrl : public CBaseSimCtrl {
 public:
     CMonteCarloSimParams SimulationParameters;
 
-    CMonteCarloSimCtrl(CMonteCarloSimParams d, int procCount) : CBaseSimCtrl(d, procCount), SimulationParameters(d) {
+    CMonteCarloSimCtrl(CMonteCarloSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
         InitRandomGenerator();
         int i = 1;
     };

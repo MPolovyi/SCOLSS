@@ -4,7 +4,8 @@
 
 #include "CBaseSimCtrl.h"
 
-CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d, int procCount) : SimulationParameters(d) {
+CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
+    int procCount = MPI::COMM_WORLD.Get_size();
     ManagerProcId = procCount - 1;
     ChildProcCount = procCount - 1;
 
@@ -20,16 +21,30 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d, int procCount) : SimulationParamete
 
     PerProcCount = SimulationParameters.PtCount / procCount;
 
+    CreateDataMapping(procCount);
+}
+
+void CBaseSimCtrl::CreateDataMapping(int procCount) {
     for (int i = 0; i < procCount; ++i) {
         ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
         ProcessMapFull[i].Init(&particles_old[i * PerProcCount], PerProcCount, i);
 
         ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
-        ProcessMap_old[i].Init(ProcessMapFull[i].last(), 1, i);
-
+        ProcessMap_old[i].Init(&particles_old[i * PerProcCount], PerProcCount, i);
         ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
-        ProcessMap_new[i].Init(ProcessMapFull[i].last(), 1, i);
+        ProcessMap_new[i].Init(&particles_new[i * PerProcCount], PerProcCount, i);
     }
+    int i = 0;
+    ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
+    ProcessMap_old[i].Init(&particles_old[i * PerProcCount], PerProcCount, i, nullptr, &(*particles_old.end())-1);
+    ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
+    ProcessMap_new[i].Init(&particles_new[i * PerProcCount], PerProcCount, i, nullptr, &(*particles_new.end())-1);
+
+    i = procCount - 1;
+    ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
+    ProcessMap_old[i].Init(&particles_old[i * PerProcCount], PerProcCount, i, &(*particles_old.begin()), nullptr);
+    ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
+    ProcessMap_new[i].Init(&particles_new[i * PerProcCount], PerProcCount, i, &(*particles_new.begin()), nullptr);
 }
 
 CYukawaDipolePt CBaseSimCtrl::getPt(size_t i) {
@@ -248,6 +263,44 @@ void CBaseSimCtrl::AccountForBorderAfterMove(CYukawaDipolePt &pt_new) {
 }
 
 void CBaseSimCtrl::SyncBeforeSave() {
-    std::cout << "Sync in " << MPI::COMM_WORLD.Get_rank();
-    SyncToMain(ProcessMapFull);
+    for (int i = 0; i < ChildProcCount + 1; ++i) {
+        ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMapFull[i].Init(&particles_old[i * PerProcCount], PerProcCount, i);
+    }
+
+    SyncToMain();
+}
+
+void CBaseSimCtrl::SyncToMain() {
+    int currentId = MPI::COMM_WORLD.Get_rank();
+    if (currentId == ManagerProcId) {
+        for (int sourceId = 0; sourceId < ChildProcCount; ++sourceId) {
+            MPI::Status status;
+            MPI::COMM_WORLD.Recv(&ProcessMapFull[sourceId], ProcessMapFull[sourceId].size_in_bytes(), MPI::BYTE, sourceId, 0, status);
+        }
+    } else {
+        MPI::COMM_WORLD.Send(&ProcessMapFull[currentId], ProcessMapFull[currentId].size_in_bytes(), MPI::BYTE, ManagerProcId, 0);
+    }
+}
+
+void CBaseSimCtrl::SyncInCycle() {
+    int currentId = MPI::COMM_WORLD.Get_rank();
+    int procCount = MPI::COMM_WORLD.Get_size();
+
+    int prevId = currentId - 1;
+    int nexId = currentId + 1;
+
+    if (prevId == -1){
+        prevId = procCount - 1;
+    }
+    if (nexId == procCount){
+        nexId = 0;
+    }
+
+    MPI::COMM_WORLD.Send(ProcessMap_old[currentId].begin(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, prevId, 0);
+    MPI::COMM_WORLD.Send(ProcessMap_old[currentId].last(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, nexId, 0);
+
+    MPI::Status status;
+    MPI::COMM_WORLD.Recv(ProcessMap_old[prevId].last(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, prevId, 0, status);
+    MPI::COMM_WORLD.Recv(ProcessMap_old[nexId].begin(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, nexId, 0, status);
 }

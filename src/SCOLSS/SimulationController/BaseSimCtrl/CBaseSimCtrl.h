@@ -62,7 +62,7 @@ public:
         }
     };
 
-    CBaseSimCtrl(CBaseSimParams d, int procCount);
+    CBaseSimCtrl(CBaseSimParams d);
 
     virtual void InitRandomGenerator() {
         int currentId = MPI::COMM_WORLD.Get_rank();
@@ -110,44 +110,24 @@ public:
     void SaveIntoEps(EPSPlot &outFile);
 
     CQuaternion GetRandomUnitQuaternion();;
+    int ManagerProcId;
+
 protected:
     std::vector<CYukawaDipolePt> particles_old;
+
     std::vector<CYukawaDipolePt> particles_new;
 
     std::vector<CDataChunk<CYukawaDipolePt> > ProcessMap_old;
     std::vector<CDataChunk<CYukawaDipolePt> > ProcessMap_new;
 
     std::vector<CDataChunk<CYukawaDipolePt> > ProcessMapFull;
-
-    int ManagerProcId;
     int ChildProcCount;
 
     size_t PerProcCount;
 
-    void SyncFromMain(std::vector<CDataChunk<CYukawaDipolePt> >& processMap) {
-        int currentId = MPI::COMM_WORLD.Get_rank();
+    void SyncToMain();
 
-        if (currentId == ManagerProcId) {
-            for (int destId = 0; destId < ChildProcCount; ++destId) {
-                MPI::COMM_WORLD.Send(&processMap[destId], processMap[destId].size_in_bytes(), MPI::BYTE, destId, 0);
-            }
-        } else {
-            MPI::Status status;
-            MPI::COMM_WORLD.Recv(&processMap[currentId], processMap[currentId].size_in_bytes(), MPI::BYTE, ManagerProcId, 0, status);
-        }
-    }
-
-    void SyncToMain(std::vector<CDataChunk<CYukawaDipolePt> >& processMap) {
-        int currentId = MPI::COMM_WORLD.Get_rank();
-        if (currentId == ManagerProcId) {
-            for (int sourceId = 0; sourceId < ChildProcCount; ++sourceId) {
-                MPI::Status status;
-                MPI::COMM_WORLD.Recv(&processMap[sourceId], processMap[sourceId].size_in_bytes(), MPI::BYTE, sourceId, 0, status);
-            }
-        } else {
-            MPI::COMM_WORLD.Send(&processMap[currentId], processMap[currentId].size_in_bytes(), MPI::BYTE, ManagerProcId, 0);
-        }
-    }
+    void SyncInCycle();
 
     double GetParticlePotentialEnergy(size_t ptIndex) const;
 
@@ -178,6 +158,8 @@ protected:
     }
 
     CYukawaDipolePt getPt(size_t i);
+
+    void CreateDataMapping(int procCount);
 };
 
 

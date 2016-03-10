@@ -100,7 +100,7 @@ Tar::Tar(std::ostream& out):_finished(false),out(out) {
 
 Tar::~Tar() {
     if (!_finished) {
-        std::cerr << "[warning]tar file was not finished." << std::endl;
+//        std::cerr << "[warning]tar file was not finished." << std::endl;
     }
 }
 

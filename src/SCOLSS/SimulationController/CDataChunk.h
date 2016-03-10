@@ -5,30 +5,43 @@
 #ifndef PROJECT_CDATACHUNK_H
 #define PROJECT_CDATACHUNK_H
 
+#include <utility>
 #include <stdlib.h>
+
 #include <SCOLSS/ExecFile/CMyException.h>
 
 template <class DataClass, size_t DataSizeInBytes = sizeof(DataClass)>
-class CDataChunk{
+class CDataChunk {
     DataClass *m_Data;
     size_t m_size;
 
     bool doCleanUp;
+    DataClass* linkToNext;
+    DataClass* linkToPrev;
 public:
+
     int ProcId;
 
     size_t size() const { return m_size; };
     size_t size_in_bytes() const { return DataSizeInBytes * m_size; }
 
+    size_t size_of_data() const { return DataSizeInBytes; }
+
     CDataChunk() { doCleanUp = false; }
 
-    void Init(DataClass* data, size_t size, int procId){
+    void Init(DataClass* data, size_t size, int procId,
+              DataClass* linkToNext = nullptr,
+              DataClass* linkToPrev = nullptr)
+    {
         m_Data = data;
         m_size = size;
 
         doCleanUp = false;
 
         ProcId = procId;
+
+        if (linkToNext == nullptr){linkToNext = end();}
+        if (linkToPrev == nullptr){linkToPrev = begin() - 1;}
     }
 
     void Init(size_t size, int procId){
@@ -53,6 +66,14 @@ public:
 
     DataClass* operator&(){
         return m_Data;
+    }
+
+    DataClass* linkNext() {
+
+    }
+
+    DataClass* linkPrev() {
+
     }
 
     DataClass* last(){
