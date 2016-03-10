@@ -33,9 +33,8 @@ public:
         archive(cereal::make_nvp("KineticEnergy", GetAverageKineticEnergy()));
     }
 
-    CLangevinSimCtrl(CLangevinSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
+    CLangevinSimCtrl(CLangevinSimParams d, int procCount) : CBaseSimCtrl(d, procCount), SimulationParameters(d) {
         InitRandomGenerator();
-        int i = 1;
     }
 
     virtual void InitRandomGenerator() {
@@ -47,14 +46,24 @@ public:
 
     void DoCycle() {
         Cycles += 1;
-        for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
+
+        int id = MPI::COMM_WORLD.Get_rank();
+
+        for (size_t i = ProcessMapFull[id].firstIndex(); i < ProcessMapFull[id].endIndex(); i++) {
             MoveParticleVerlet(i);
             RotateParticleVerlet(i);
         }
-        for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
+
+        SyncToMain(ProcessMap_new);
+        SyncFromMain(ProcessMap_new);
+
+        for (size_t i = ProcessMapFull[id].firstIndex(); i < ProcessMapFull[id].endIndex(); i++) {
             AccelerateMoveParticleVerlet(i);
             AccelerateRotateParticleVerlet(i);
         }
+
+        SyncToMain(ProcessMap_new);
+        SyncFromMain(ProcessMap_new);
 
         std::swap(particles_old, particles_new);
     };

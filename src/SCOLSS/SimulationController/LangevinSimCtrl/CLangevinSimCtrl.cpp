@@ -71,7 +71,6 @@ double CLangevinSimCtrl::GetForceOld(size_t ptIndex) {
 }
 
 double CLangevinSimCtrl::GetForceNew(size_t ptIndex) {
-
     return particles_new[ptIndex].GetForceFromOther(particles_old[GetPrevious(ptIndex)],
                                                     particles_old[GetNext(ptIndex)]);
 

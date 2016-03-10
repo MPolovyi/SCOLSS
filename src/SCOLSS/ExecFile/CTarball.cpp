@@ -14,17 +14,10 @@
 #include <ctime>
 #include <unistd.h>
 #include <sstream>
+#include <SCOLSS/ExecFile/CMyException.h>
 #include "CTarball.h"
 
 #define TARHEADER static_cast<PosixTarHeader*>(header)
-
-class MyException : public std::exception {
-    std::string s;
-public:
-    MyException(std::string _s) : s(_s){}
-    ~MyException() throw () {}
-    const char* what() const throw() { return s.c_str(); }
-};
 
 struct PosixTarHeader
 {

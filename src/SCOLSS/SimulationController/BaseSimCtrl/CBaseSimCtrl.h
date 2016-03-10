@@ -11,6 +11,8 @@
 #include <chrono>
 #include <fstream>
 
+#include <mpi.h>
+
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/polymorphic.hpp>
@@ -24,6 +26,8 @@
 #include <SCOLSS/SimulationController/BaseSimCtrl/CBaseSimCtrl.h>
 #include <SCOLSS/SimulationController/BaseSimCtrl/CBaseSimParams.h>
 
+#include <SCOLSS/SimulationController/CDataChunk.h>
+
 class CBaseSimCtrl {
 public:
     unsigned long Cycles;
@@ -32,8 +36,7 @@ public:
 
     std::chrono::time_point<std::chrono::system_clock> initialize_time;
 
-    unsigned long RandomSeed;
-
+    unsigned long RndSeed;
     std::mt19937_64 rnd_gen;
     std::uniform_real_distribution<double> uniformDistributionZeroTwoPi;
 
@@ -59,23 +62,36 @@ public:
         }
     };
 
-    CBaseSimCtrl(CBaseSimParams d);
+    CBaseSimCtrl(CBaseSimParams d, int procCount);
 
     virtual void InitRandomGenerator() {
+        int currentId = MPI::COMM_WORLD.Get_rank();
+
+        if (currentId == ManagerProcId) {
+            initialize_time = std::chrono::system_clock::now();
+
+            std::chrono::high_resolution_clock high_resolution_clock;
+            auto tm = std::chrono::time_point_cast<std::chrono::nanoseconds>(high_resolution_clock.now());
+            RndSeed = (unsigned long) (tm.time_since_epoch().count());
+
+            for (int destId = 0; destId < ChildProcCount; ++destId) {
+                MPI::COMM_WORLD.Send(&initialize_time, sizeof(initialize_time), MPI::BYTE, destId, 0);
+                MPI::COMM_WORLD.Send(&RndSeed, sizeof(RndSeed), MPI::BYTE, destId, 0);
+            }
+        } else {
+            MPI::Status status;
+            MPI::COMM_WORLD.Recv(&initialize_time, sizeof(initialize_time), MPI::BYTE, ManagerProcId, 0, status);
+            MPI::COMM_WORLD.Recv(&RndSeed, sizeof(RndSeed), MPI::BYTE, ManagerProcId, 0, status);
+        }
+
         uniformDistributionZeroOne = std::uniform_real_distribution<double>(0, 1);
         uniformDistributionZeroTwoPi = std::uniform_real_distribution<double>(0, 2 * M_PI);
 
         auto tmp = (SimulationParameters.ParticleDiameter / SimulationParameters.Density) / 4;
         initialDisplacementDistribution = std::uniform_real_distribution<double>(-tmp, tmp);
 
-        time_t rawtime;
-        time(&rawtime);
-
-        std::chrono::high_resolution_clock high_resolution_clock;
-        auto tm = std::chrono::time_point_cast<std::chrono::nanoseconds>(high_resolution_clock.now());
-
         rnd_gen();
-        rnd_gen = std::mt19937_64((unsigned long) tm.time_since_epoch().count());
+        rnd_gen = std::mt19937_64(RndSeed);
     };
 
     bool PrintTimeExtrapolation(std::chrono::time_point<std::chrono::system_clock> &start_time,
@@ -87,16 +103,52 @@ public:
 
     void SaveForPovray(std::fstream &ofstr);
 
+    void SyncBeforeSave();
+
     size_t epsLine;
 
     void SaveIntoEps(EPSPlot &outFile);
 
     CQuaternion GetRandomUnitQuaternion();;
-
+protected:
     std::vector<CYukawaDipolePt> particles_old;
     std::vector<CYukawaDipolePt> particles_new;
 
-protected:
+    std::vector<CDataChunk<CYukawaDipolePt> > ProcessMap_old;
+    std::vector<CDataChunk<CYukawaDipolePt> > ProcessMap_new;
+
+    std::vector<CDataChunk<CYukawaDipolePt> > ProcessMapFull;
+
+    int ManagerProcId;
+    int ChildProcCount;
+
+    size_t PerProcCount;
+
+    void SyncFromMain(std::vector<CDataChunk<CYukawaDipolePt> >& processMap) {
+        int currentId = MPI::COMM_WORLD.Get_rank();
+
+        if (currentId == ManagerProcId) {
+            for (int destId = 0; destId < ChildProcCount; ++destId) {
+                MPI::COMM_WORLD.Send(&processMap[destId], processMap[destId].size_in_bytes(), MPI::BYTE, destId, 0);
+            }
+        } else {
+            MPI::Status status;
+            MPI::COMM_WORLD.Recv(&processMap[currentId], processMap[currentId].size_in_bytes(), MPI::BYTE, ManagerProcId, 0, status);
+        }
+    }
+
+    void SyncToMain(std::vector<CDataChunk<CYukawaDipolePt> >& processMap) {
+        int currentId = MPI::COMM_WORLD.Get_rank();
+        if (currentId == ManagerProcId) {
+            for (int sourceId = 0; sourceId < ChildProcCount; ++sourceId) {
+                MPI::Status status;
+                MPI::COMM_WORLD.Recv(&processMap[sourceId], processMap[sourceId].size_in_bytes(), MPI::BYTE, sourceId, 0, status);
+            }
+        } else {
+            MPI::COMM_WORLD.Send(&processMap[currentId], processMap[currentId].size_in_bytes(), MPI::BYTE, ManagerProcId, 0);
+        }
+    }
+
     double GetParticlePotentialEnergy(size_t ptIndex) const;
 
     double GetOrderParameter() const;
@@ -124,6 +176,8 @@ protected:
         }
         return ret;
     }
+
+    CYukawaDipolePt getPt(size_t i);
 };
 
 

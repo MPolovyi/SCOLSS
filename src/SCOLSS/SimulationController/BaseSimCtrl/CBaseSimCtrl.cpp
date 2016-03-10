@@ -4,63 +4,81 @@
 
 #include "CBaseSimCtrl.h"
 
-CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
+CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d, int procCount) : SimulationParameters(d) {
+    ManagerProcId = procCount - 1;
+    ChildProcCount = procCount - 1;
+
     Cycles = 0;
     epsLine = 1;
 
     InitRandomGenerator();
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
-        CYukawaDipolePt pt(SimulationParameters.YukawaA, SimulationParameters.YukawaK, SimulationParameters.SystemSize);
-
-        switch (SimulationParameters.InitialConfiguration) {
-            case EInitialConfiguration::Random: {
-                pt.SetRotation(GetRandomUnitQuaternion());
-                pt.Coordinates = i > 0
-                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
-                                   initialDisplacementDistribution(rnd_gen)
-                                 : 0;
-                break;
-            }
-
-            case EInitialConfiguration::RandomUnmoving: {
-                pt.SetRotation(GetRandomUnitQuaternion());
-                pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
-                break;
-            }
-
-            case EInitialConfiguration::Aligned: {
-                pt.SetRotation(CQuaternion(0, CVector::AxisZ));
-                pt.Coordinates = i > 0
-                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
-                                   initialDisplacementDistribution(rnd_gen)
-                                 : 0;
-                break;
-            }
-
-            case EInitialConfiguration::AlignedTwoSides: {
-                pt.SetRotation(CQuaternion(M_PI * (i % 2), CVector::AxisY));
-                pt.Coordinates = i > 0
-                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
-                                   initialDisplacementDistribution(rnd_gen)
-                                 : 0;
-                break;
-            }
-
-            case EInitialConfiguration::AlingnedUnmoving: {
-                pt.SetRotation(CQuaternion(M_PI * (i % 2), CVector::AxisY));
-                pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
-                break;
-            }
-            case EInitialConfiguration::OneCluster: {
-                pt.SetRotation(CQuaternion(0, CVector::AxisZ));
-                pt.Coordinates = SimulationParameters.SystemSize/4 + SimulationParameters.ParticleDiameter*i;
-            }
-        }
+        auto pt = getPt(i);
         particles_new.push_back(pt);
         particles_old.push_back(pt);
     }
 
-    initialize_time = std::chrono::system_clock::now();
+    PerProcCount = SimulationParameters.PtCount / procCount;
+
+    for (int i = 0; i < procCount; ++i) {
+        ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMapFull[i].Init(&particles_old[i * PerProcCount], PerProcCount, i);
+
+        ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMap_old[i].Init(ProcessMapFull[i].last(), 1, i);
+
+        ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMap_new[i].Init(ProcessMapFull[i].last(), 1, i);
+    }
+}
+
+CYukawaDipolePt CBaseSimCtrl::getPt(size_t i) {
+    CYukawaDipolePt pt(SimulationParameters.YukawaA, SimulationParameters.YukawaK, SimulationParameters.SystemSize);
+    switch (SimulationParameters.InitialConfiguration) {
+            case Random: {
+                pt.SetRotation(GetRandomUnitQuaternion());
+                pt.Coordinates = i > 0
+                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
+                                   initialDisplacementDistribution(rnd_gen)
+                                 : 0;
+                break;
+            }
+
+            case RandomUnmoving: {
+                pt.SetRotation(GetRandomUnitQuaternion());
+                pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
+                break;
+            }
+
+            case Aligned: {
+                pt.SetRotation(CQuaternion(0, CVector::AxisZ));
+                pt.Coordinates = i > 0
+                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
+                                   initialDisplacementDistribution(rnd_gen)
+                                 : 0;
+                break;
+            }
+
+            case AlignedTwoSides: {
+                pt.SetRotation(CQuaternion(M_PI * (i % 2), CVector::AxisY));
+                pt.Coordinates = i > 0
+                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
+                                   initialDisplacementDistribution(rnd_gen)
+                                 : 0;
+                break;
+            }
+
+            case AlingnedUnmoving: {
+                pt.SetRotation(CQuaternion(M_PI * (i % 2), CVector::AxisY));
+                pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
+                break;
+            }
+            case OneCluster: {
+                pt.SetRotation(CQuaternion(0, CVector::AxisZ));
+                pt.Coordinates = SimulationParameters.SystemSize / 4 + SimulationParameters.ParticleDiameter * i;
+            }
+        }
+    return pt;
 }
 
 bool CBaseSimCtrl::PrintTimeExtrapolation(std::chrono::time_point<std::chrono::system_clock> &start_time,
@@ -227,4 +245,9 @@ void CBaseSimCtrl::AccountForBorderAfterMove(CYukawaDipolePt &pt_new) {
         pt_new.Coordinates += SimulationParameters.SystemSize;
     }
 
+}
+
+void CBaseSimCtrl::SyncBeforeSave() {
+    std::cout << "Sync in " << MPI::COMM_WORLD.Get_rank();
+    SyncToMain(ProcessMapFull);
 }
