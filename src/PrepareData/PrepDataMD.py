@@ -6,20 +6,20 @@ __author__ = 'mpolovyi'
 
 simData = {
     "Base": {
-        "Density": [0.25], # 0.5, 0.75],
-        "InitialConfiguration": [0],
-        "KbT": [0.6],# 1.2, 1.8],
+        "Density": [0.01], # 0.5, 0.75],
+        "InitialConfiguration": [5],
+        "KbT": [0.6, 1.2, 1.8],
         "LoadSavedState": 0,
-        "NumberOfSavePoints": 100,
+        "NumberOfSavePoints": 1000,
         "NumberOfImageLines": 1,
-        "PtCount": [3200],
+        "PtCount": [200],
         "SavedParticles": "",
         "SaveParticlesInfo": True,
         "SaveEpsPicture": False
     },
-    "CyclesBetweenSaves": 200000,
+    "CyclesBetweenSaves": 500,
     "TimeBetweenSaves": 0.25,
-    "Queue": "LONG"
+    "Queue": "SHORT"
 }
 
 
