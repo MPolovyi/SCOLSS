@@ -15,9 +15,9 @@ class CDataChunk {
     DataClass *m_Data;
     size_t m_size;
 
-    bool doCleanUp;
-    DataClass* linkToNext;
-    DataClass* linkToPrev;
+    bool m_doCleanUp;
+    DataClass*m_linkToNext;
+    DataClass*m_linkToPrev;
 public:
 
     int ProcId;
@@ -27,7 +27,7 @@ public:
 
     size_t size_of_data() const { return DataSizeInBytes; }
 
-    CDataChunk() { doCleanUp = false; }
+    CDataChunk() { m_doCleanUp = false; }
 
     void Init(DataClass* data, size_t size, int procId,
               DataClass* linkToNext = nullptr,
@@ -36,12 +36,12 @@ public:
         m_Data = data;
         m_size = size;
 
-        doCleanUp = false;
+        m_doCleanUp = false;
 
         ProcId = procId;
 
-        if (linkToNext == nullptr){linkToNext = end();}
-        if (linkToPrev == nullptr){linkToPrev = begin() - 1;}
+        if (linkToNext == nullptr){ m_linkToNext = end(); } else { m_linkToNext = linkToNext; }
+        if (linkToPrev == nullptr){ m_linkToPrev = begin() - 1; } else { m_linkToPrev = linkToPrev; }
     }
 
     void Init(size_t size, int procId){
@@ -49,11 +49,11 @@ public:
         m_size = size;
         m_Data = new DataClass[size];
 
-        doCleanUp = true;
+        m_doCleanUp = true;
     }
 
     ~CDataChunk(){
-        if (doCleanUp)
+        if (m_doCleanUp)
             delete[] m_Data;
     }
 
@@ -68,12 +68,12 @@ public:
         return m_Data;
     }
 
-    DataClass* linkNext() {
-
+    DataClass* linkToNext() {
+        return m_linkToNext;
     }
 
-    DataClass* linkPrev() {
-
+    DataClass* linkToPrev() {
+        return m_linkToPrev;
     }
 
     DataClass* last(){
@@ -87,7 +87,7 @@ public:
         return m_Data + size();
     }
 
-    size_t firstIndex(){
+    size_t beginIndex(){
         return ProcId*m_size;
     }
     size_t endIndex(){

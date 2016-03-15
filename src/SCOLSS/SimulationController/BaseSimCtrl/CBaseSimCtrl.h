@@ -125,10 +125,6 @@ protected:
 
     size_t PerProcCount;
 
-    void SyncToMain();
-
-    void SyncInCycle();
-
     double GetParticlePotentialEnergy(size_t ptIndex) const;
 
     double GetOrderParameter() const;
@@ -160,6 +156,10 @@ protected:
     CYukawaDipolePt getPt(size_t i);
 
     void CreateDataMapping(int procCount);
+
+    void SyncToMain();
+
+    void SyncInCycle();
 };
 
 

@@ -25,26 +25,28 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
 }
 
 void CBaseSimCtrl::CreateDataMapping(int procCount) {
-    for (int i = 0; i < procCount; ++i) {
+    for (int procId = 0; procId < procCount; ++procId) {
         ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
-        ProcessMapFull[i].Init(&particles_old[i * PerProcCount], PerProcCount, i);
+        ProcessMapFull[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
 
         ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
-        ProcessMap_old[i].Init(&particles_old[i * PerProcCount], PerProcCount, i);
-        ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
-        ProcessMap_new[i].Init(&particles_new[i * PerProcCount], PerProcCount, i);
-    }
-    int i = 0;
-    ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
-    ProcessMap_old[i].Init(&particles_old[i * PerProcCount], PerProcCount, i, nullptr, &(*particles_old.end())-1);
-    ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
-    ProcessMap_new[i].Init(&particles_new[i * PerProcCount], PerProcCount, i, nullptr, &(*particles_new.end())-1);
+        ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
 
-    i = procCount - 1;
-    ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
-    ProcessMap_old[i].Init(&particles_old[i * PerProcCount], PerProcCount, i, &(*particles_old.begin()), nullptr);
-    ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
-    ProcessMap_new[i].Init(&particles_new[i * PerProcCount], PerProcCount, i, &(*particles_new.begin()), nullptr);
+        ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId);
+    }
+
+    for (int procId = 0; procId < procCount; ++procId) {
+        ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId,
+                                    procId == procCount-1 ? ProcessMap_old[0].begin() : ProcessMap_old[procId + 1].begin(),
+                                    procId == 0 ? ProcessMap_old[procCount-1].last() : ProcessMap_old[procId - 1].last());
+
+        ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId,
+                                    procId == procCount-1 ? ProcessMap_new[0].begin() : ProcessMap_new[procId + 1].begin(),
+                                    procId == 0 ? ProcessMap_new[procCount-1].last() : ProcessMap_new[procId - 1].last());
+    }
 }
 
 CYukawaDipolePt CBaseSimCtrl::getPt(size_t i) {
@@ -290,10 +292,10 @@ void CBaseSimCtrl::SyncInCycle() {
     int prevId = currentId - 1;
     int nexId = currentId + 1;
 
-    if (prevId == -1){
+    if (prevId == -1) {
         prevId = procCount - 1;
     }
-    if (nexId == procCount){
+    if (nexId == procCount) {
         nexId = 0;
     }
 
@@ -301,6 +303,12 @@ void CBaseSimCtrl::SyncInCycle() {
     MPI::COMM_WORLD.Send(ProcessMap_old[currentId].last(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, nexId, 0);
 
     MPI::Status status;
-    MPI::COMM_WORLD.Recv(ProcessMap_old[prevId].last(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, prevId, 0, status);
-    MPI::COMM_WORLD.Recv(ProcessMap_old[nexId].begin(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, nexId, 0, status);
+    MPI::COMM_WORLD.Recv(ProcessMap_old[currentId].linkToPrev(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, prevId, 0, status);
+    MPI::COMM_WORLD.Recv(ProcessMap_old[currentId].linkToNext(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, nexId, 0, status);
+
+    MPI::COMM_WORLD.Send(ProcessMap_new[currentId].begin(), ProcessMap_new[currentId].size_of_data(), MPI::BYTE, prevId, 0);
+    MPI::COMM_WORLD.Send(ProcessMap_new[currentId].last(), ProcessMap_new[currentId].size_of_data(), MPI::BYTE, nexId, 0);
+
+    MPI::COMM_WORLD.Recv(ProcessMap_new[currentId].linkToPrev(), ProcessMap_new[currentId].size_of_data(), MPI::BYTE, prevId, 0, status);
+    MPI::COMM_WORLD.Recv(ProcessMap_new[currentId].linkToNext(), ProcessMap_new[currentId].size_of_data(), MPI::BYTE, nexId, 0, status);
 }

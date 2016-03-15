@@ -2,7 +2,8 @@ set(EXEC_FILE_SOURCES
         main.cpp
         CTarball.cpp
         CTarball.h
-        CMyException.h)
+        CMyException.h
+        main.h)
 
 find_package(MPI REQUIRED)
 

@@ -48,19 +48,19 @@ public:
         Cycles += 1;
 
         int id = MPI::COMM_WORLD.Get_rank();
-        for (size_t i = ProcessMapFull[id].firstIndex(); i < ProcessMapFull[id].endIndex(); i++) {
-//            std::cout << i << " " << id << "\n";
+        for (size_t i = ProcessMapFull[id].beginIndex(); i < ProcessMapFull[id].endIndex(); i++) {
             MoveParticleVerlet(i);
             RotateParticleVerlet(i);
         }
 
         SyncInCycle();
 
-        for (size_t i = ProcessMapFull[id].firstIndex(); i < ProcessMapFull[id].endIndex(); i++) {
+        for (size_t i = ProcessMapFull[id].beginIndex(); i < ProcessMapFull[id].endIndex(); i++) {
             AccelerateMoveParticleVerlet(i);
             AccelerateRotateParticleVerlet(i);
         }
 
+        SyncInCycle();
         std::swap(particles_old, particles_new);
     };
 
