@@ -51,11 +51,15 @@ protected:
     virtual void DoCycle() {
         Cycles++;
 
-        for (size_t pt = 0; pt < SimulationParameters.PtCount; ++pt) {
-            DoTestMove(pt);
-            DoTestRotation(pt);
+        Cycles += 1;
+
+        int id = MPI::COMM_WORLD.Get_rank();
+        for (size_t i = ProcessMapFull[id].beginIndex(); i < ProcessMapFull[id].endIndex(); i++) {
+            DoTestMove(i);
+            DoTestRotation(i);
         }
 
+        SyncInCycle();
     };
 
     virtual void InitRandomGenerator() {
