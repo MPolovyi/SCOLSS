@@ -35,7 +35,6 @@ public:
 
     CLangevinSimCtrl(CLangevinSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
         InitRandomGenerator();
-        int i = 1;
     }
 
     virtual void InitRandomGenerator() {
@@ -47,15 +46,21 @@ public:
 
     void DoCycle() {
         Cycles += 1;
-        for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
+
+        int id = MPI::COMM_WORLD.Get_rank();
+        for (size_t i = ProcessMapFull[id].beginIndex(); i < ProcessMapFull[id].endIndex(); i++) {
             MoveParticleVerlet(i);
             RotateParticleVerlet(i);
         }
-        for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
+
+        SyncInCycle();
+
+        for (size_t i = ProcessMapFull[id].beginIndex(); i < ProcessMapFull[id].endIndex(); i++) {
             AccelerateMoveParticleVerlet(i);
             AccelerateRotateParticleVerlet(i);
         }
 
+        SyncInCycle();
         std::swap(particles_old, particles_new);
     };
 
