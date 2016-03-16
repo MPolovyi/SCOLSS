@@ -31,4 +31,6 @@ bin/
 .idea
 build
 
-Results
+Results/*
+
+!Results/convert.sh

@@ -1,3 +1,7 @@
+find_package(MPI REQUIRED)
+
+include_directories(${MPI_INCLUDE_PATH})
+
 set(BASE_SIM_DIR "BaseSimCtrl")
 set(LD_SIM_DIR "LangevinSimCtrl")
 set(MC_SIM_DIR "MonteCarloSimCtrl")
@@ -10,6 +14,7 @@ set(CORE_SIMULATOR_HEADERS
         ${CORE_SIMULATOR_DIR}/${MC_SIM_DIR}/CMonteCarloSimCtrl.h
         ${CORE_SIMULATOR_DIR}/${LD_SIM_DIR}/CLangevinSimParams.h
         ${CORE_SIMULATOR_DIR}/${LD_SIM_DIR}/CLangevinSimCtrl.h
+        ${CORE_SIMULATOR_DIR}/CDataChunk.h
         )
 
 
@@ -40,9 +45,10 @@ set(CORE_SIMULATOR_SOURCES
         ${MC_SIM_DIR}/CMonteCarloSimParams.cpp
         ${MC_SIM_DIR}/CMonteCarloSimCtrl.cpp
         ${LD_SIM_DIR}/CLangevinSimCtrl.cpp
-        ${LD_SIM_DIR}/CLangevinSimParams.cpp)
+        ${LD_SIM_DIR}/CLangevinSimParams.cpp
+        CDataChunk.h)
 
 add_library(CoreSimulatorLibrary STATIC ${CORE_SIMULATOR_SOURCES})
 setup_custom_target(CoreSimulatorLibrary ${SRC_ROOT_DIR}${CORE_SIMULATOR_DIR})
 
-target_link_libraries(CoreSimulatorLibrary EPSPlotLibrary MathLibrary ParticlePhysLibrary)
+target_link_libraries(CoreSimulatorLibrary EPSPlotLibrary MathLibrary ParticlePhysLibrary ${MPI_LIBRARIES})

@@ -79,10 +79,13 @@ extern "C" void Function_UnwrapBinary(char ** input_string, int* in_size, double
 
 extern "C" void Function_AutoCorrelation(double * averAutoCorr, int* sampleIndex, char ** zero_configuration, char ** current_configuration, int * ptCount);
 
-extern "C" void Function_AutoCorrelationInCluster(double * averAutoCorr,
+extern "C" void Function_AutoCorrelationInCluster(double *_averAutoCorr,
                                                   char ** zero_configuration,
                                                   char ** current_configuration,
                                                   int * _ptCount,
-                                                  int * _blocksCount);
+                                                  int * _ptIndexes,
+                                                  int * _ptIndexCount);
+
+extern "C" void Function_GetParticlesAngles(double * angles_x, double * angles_y, double * angles_z, double * angle_phi, char ** particles, int * _ptCount);
 
 #endif //PROJECT_EXTENSIONDEFS_H

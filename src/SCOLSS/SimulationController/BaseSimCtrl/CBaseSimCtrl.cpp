@@ -5,62 +5,97 @@
 #include "CBaseSimCtrl.h"
 
 CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
+    int procCount = MPI::COMM_WORLD.Get_size();
+    ManagerProcId = procCount - 1;
+    ChildProcCount = procCount - 1;
+
     Cycles = 0;
     epsLine = 1;
 
     InitRandomGenerator();
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
-        CYukawaDipolePt pt(SimulationParameters.YukawaA, SimulationParameters.YukawaK, SimulationParameters.SystemSize);
-
-        switch (SimulationParameters.InitialConfiguration) {
-            case EInitialConfiguration::Random: {
-                pt.SetRotation(GetRandomUnitQuaternion());
-                pt.Coordinates = i > 0
-                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
-                                   initialDisplacementDistribution(rnd_gen)
-                                 : 0;
-                break;
-            }
-
-            case EInitialConfiguration::RandomUnmoving: {
-                pt.SetRotation(GetRandomUnitQuaternion());
-                pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
-                break;
-            }
-
-            case EInitialConfiguration::Aligned: {
-                pt.SetRotation(CQuaternion(0, CVector::AxisZ));
-                pt.Coordinates = i > 0
-                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
-                                   initialDisplacementDistribution(rnd_gen)
-                                 : 0;
-                break;
-            }
-
-            case EInitialConfiguration::AlignedTwoSides: {
-                pt.SetRotation(CQuaternion(M_PI * (i % 2), CVector::AxisY));
-                pt.Coordinates = i > 0
-                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
-                                   initialDisplacementDistribution(rnd_gen)
-                                 : 0;
-                break;
-            }
-
-            case EInitialConfiguration::AlingnedUnmoving: {
-                pt.SetRotation(CQuaternion(M_PI * (i % 2), CVector::AxisY));
-                pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
-                break;
-            }
-            case EInitialConfiguration::OneCluster: {
-                pt.SetRotation(CQuaternion(0, CVector::AxisZ));
-                pt.Coordinates = SimulationParameters.SystemSize/4 + SimulationParameters.ParticleDiameter*i;
-            }
-        }
+        auto pt = getPt(i);
         particles_new.push_back(pt);
         particles_old.push_back(pt);
     }
 
-    initialize_time = std::chrono::system_clock::now();
+    PerProcCount = SimulationParameters.PtCount / procCount;
+
+    CreateDataMapping(procCount);
+}
+
+void CBaseSimCtrl::CreateDataMapping(int procCount) {
+    for (int procId = 0; procId < procCount; ++procId) {
+        ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMapFull[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
+
+        ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
+
+        ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId);
+    }
+
+    for (int procId = 0; procId < procCount; ++procId) {
+        ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId,
+                                    procId == procCount-1 ? ProcessMap_old[0].begin() : ProcessMap_old[procId + 1].begin(),
+                                    procId == 0 ? ProcessMap_old[procCount-1].last() : ProcessMap_old[procId - 1].last());
+
+        ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId,
+                                    procId == procCount-1 ? ProcessMap_new[0].begin() : ProcessMap_new[procId + 1].begin(),
+                                    procId == 0 ? ProcessMap_new[procCount-1].last() : ProcessMap_new[procId - 1].last());
+    }
+}
+
+CYukawaDipolePt CBaseSimCtrl::getPt(size_t i) {
+    CYukawaDipolePt pt(SimulationParameters.YukawaA, SimulationParameters.YukawaK, SimulationParameters.SystemSize);
+    switch (SimulationParameters.InitialConfiguration) {
+            case Random: {
+                pt.SetRotation(GetRandomUnitQuaternion());
+                pt.Coordinates = i > 0
+                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
+                                   initialDisplacementDistribution(rnd_gen)
+                                 : 0;
+                break;
+            }
+
+            case RandomUnmoving: {
+                pt.SetRotation(GetRandomUnitQuaternion());
+                pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
+                break;
+            }
+
+            case Aligned: {
+                pt.SetRotation(CQuaternion(0, CVector::AxisZ));
+                pt.Coordinates = i > 0
+                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
+                                   initialDisplacementDistribution(rnd_gen)
+                                 : 0;
+                break;
+            }
+
+            case AlignedTwoSides: {
+                pt.SetRotation(CQuaternion(M_PI * (i % 2), CVector::AxisY));
+                pt.Coordinates = i > 0
+                                 ? i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density) +
+                                   initialDisplacementDistribution(rnd_gen)
+                                 : 0;
+                break;
+            }
+
+            case AlingnedUnmoving: {
+                pt.SetRotation(CQuaternion(M_PI * (i % 2), CVector::AxisY));
+                pt.Coordinates = i * (SimulationParameters.ParticleDiameter / SimulationParameters.Density);
+                break;
+            }
+            case OneCluster: {
+                pt.SetRotation(CQuaternion(0, CVector::AxisZ));
+                pt.Coordinates = SimulationParameters.SystemSize / 4 + SimulationParameters.ParticleDiameter * i;
+            }
+        }
+    return pt;
 }
 
 bool CBaseSimCtrl::PrintTimeExtrapolation(std::chrono::time_point<std::chrono::system_clock> &start_time,
@@ -227,4 +262,53 @@ void CBaseSimCtrl::AccountForBorderAfterMove(CYukawaDipolePt &pt_new) {
         pt_new.Coordinates += SimulationParameters.SystemSize;
     }
 
+}
+
+void CBaseSimCtrl::SyncBeforeSave() {
+    for (int i = 0; i < ChildProcCount + 1; ++i) {
+        ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
+        ProcessMapFull[i].Init(&particles_old[i * PerProcCount], PerProcCount, i);
+    }
+
+    SyncToMain();
+}
+
+void CBaseSimCtrl::SyncToMain() {
+    int currentId = MPI::COMM_WORLD.Get_rank();
+    if (currentId == ManagerProcId) {
+        for (int sourceId = 0; sourceId < ChildProcCount; ++sourceId) {
+            MPI::Status status;
+            MPI::COMM_WORLD.Recv(&ProcessMapFull[sourceId], ProcessMapFull[sourceId].size_in_bytes(), MPI::BYTE, sourceId, 0, status);
+        }
+    } else {
+        MPI::COMM_WORLD.Send(&ProcessMapFull[currentId], ProcessMapFull[currentId].size_in_bytes(), MPI::BYTE, ManagerProcId, 0);
+    }
+}
+
+void CBaseSimCtrl::SyncInCycle() {
+    int currentId = MPI::COMM_WORLD.Get_rank();
+    int procCount = MPI::COMM_WORLD.Get_size();
+
+    int prevId = currentId - 1;
+    int nexId = currentId + 1;
+
+    if (prevId == -1) {
+        prevId = procCount - 1;
+    }
+    if (nexId == procCount) {
+        nexId = 0;
+    }
+
+    MPI::COMM_WORLD.Send(ProcessMap_old[currentId].begin(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, prevId, 0);
+    MPI::COMM_WORLD.Send(ProcessMap_old[currentId].last(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, nexId, 0);
+
+    MPI::Status status;
+    MPI::COMM_WORLD.Recv(ProcessMap_old[currentId].linkToPrev(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, prevId, 0, status);
+    MPI::COMM_WORLD.Recv(ProcessMap_old[currentId].linkToNext(), ProcessMap_old[currentId].size_of_data(), MPI::BYTE, nexId, 0, status);
+
+    MPI::COMM_WORLD.Send(ProcessMap_new[currentId].begin(), ProcessMap_new[currentId].size_of_data(), MPI::BYTE, prevId, 0);
+    MPI::COMM_WORLD.Send(ProcessMap_new[currentId].last(), ProcessMap_new[currentId].size_of_data(), MPI::BYTE, nexId, 0);
+
+    MPI::COMM_WORLD.Recv(ProcessMap_new[currentId].linkToPrev(), ProcessMap_new[currentId].size_of_data(), MPI::BYTE, prevId, 0, status);
+    MPI::COMM_WORLD.Recv(ProcessMap_new[currentId].linkToNext(), ProcessMap_new[currentId].size_of_data(), MPI::BYTE, nexId, 0, status);
 }

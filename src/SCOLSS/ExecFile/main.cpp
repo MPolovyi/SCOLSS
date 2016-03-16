@@ -19,27 +19,26 @@
 
 #include <SCOLSS/ExecFile/CTarball.h>
 
-void InitializeSimulations(int argc, char **argv);
-
-void RunSimulations(std::shared_ptr<CBaseSimCtrl> sim,
-                    std::string &fullSaveFileName, std::string &miniSaveFileName, std::string &pictSaveFileName,
-                    Tar &fullTarBall, Tar &miniTarBall, Tar &pictTarBall);
-
-void SaveToFile(std::shared_ptr<CBaseSimCtrl> &contr,
-                std::string &fullSaveFileName, std::string &miniSaveFileName,
-                Tar &fullTarBall, Tar &miniTarBall,
-                uint64_t cycle);
+#include <SCOLSS/ExecFile/main.h>
 
 int main(int argc, char **argv) {
+    MPI::Init(argc, argv);
+    std::cout.precision(10);
+    std::cout << std::fixed;
     InitializeSimulations(argc, argv);
+    MPI::Finalize();
 }
 
 void InitializeSimulations(int argc, char **argv) {
+    int p = MPI::COMM_WORLD.Get_size();
+    int id = MPI::COMM_WORLD.Get_rank();
+
     std::string simType = argv[2];
+
     ESimulationType simT;
-    if(simType == "MC"){
+    if (simType == "MC") {
         simT = ESimulationType::MonteCarlo;
-    } else if (simType == "LD"){
+    } else if (simType == "LD") {
         simT = ESimulationType::LangevinDynamics;
     } else {
         std::cout << "Unknown simulation type. Exiting." << std::endl;
@@ -48,23 +47,18 @@ void InitializeSimulations(int argc, char **argv) {
 
     std::string simDataFileName = argv[1];
 
-    std::fstream fullSaveTarName("FullData_" + simDataFileName + ".tar", std::ios_base::out);
-    std::fstream miniSaveTarName("MiniData_" + simDataFileName + ".tar", std::ios_base::out);
-    std::fstream pictSaveTarName("PictData_" + simDataFileName + ".tar", std::ios_base::out);
-
-    Tar fullTarBall(fullSaveTarName);
-    Tar miniTarBall(miniSaveTarName);
-    Tar pictTarBall(pictSaveTarName);
-
+    if (id == p-1) {
+        InitTar(simDataFileName);
+    }
     std::string samples = argv[3];
-    for(int i = 1; i <= std::stoi(samples); i++) {
+    for (int i = 1; i <= std::stoi(samples); i++) {
         std::ifstream simDataFileStream(simDataFileName);
 
         cereal::JSONInputArchive simDataArchieve(simDataFileStream);
 
         std::shared_ptr<CBaseSimCtrl> sim;
 
-        switch (simT){
+        switch (simT) {
             case MonteCarlo: {
                 CMonteCarloSimParams data;
                 data.load(simDataArchieve);
@@ -83,107 +77,170 @@ void InitializeSimulations(int argc, char **argv) {
         std::string miniSaveFileName = "MiniData_" + std::to_string(i) + "_" + simDataFileName;
         std::string pictSaveFileName = "PictData_" + std::to_string(i) + "_" + simDataFileName + ".eps";
 
-        SaveToFile(sim, fullSaveFileName, miniSaveFileName, fullTarBall, miniTarBall, 0);
+        SaveDataToFile(sim, fullSaveFileName, miniSaveFileName, simDataFileName, 0);
 
-        RunSimulations(sim, fullSaveFileName, miniSaveFileName, pictSaveFileName,
-                       fullTarBall,
-                       miniTarBall,
-                       pictTarBall);
-
-        std::cout << i << std::endl;
+        RunSimulations(sim, fullSaveFileName, miniSaveFileName, pictSaveFileName, simDataFileName);
     }
+
+    if (id == p-1) {
+        FinishTar(simDataFileName);
+    }
+}
+
+void RunSimulations(std::shared_ptr<CBaseSimCtrl> contr,
+                    std::string &fullSaveFileName, std::string &miniSaveFileName, std::string &pictSaveFileName,
+                    std::string &simDataFileName) {
+
+    EPSPlot savePictureFile;
+
+    InitEpsFile(contr, savePictureFile, pictSaveFileName);
+
+    std::chrono::time_point<std::chrono::system_clock> start_time, step_time;
+    start_time = std::chrono::system_clock::now();
+    uint64_t prev_measure = 0;
+
+    uint64_t totalCycles = contr->SimulationParameters.CyclesBetweenSaves * contr->SimulationParameters.NumberOfSavePoints;
+    contr->SimulationParameters.NumberOfImageLines = std::min(totalCycles, contr->SimulationParameters.NumberOfImageLines);
+
+    for (uint64_t cycle = 1; cycle <= totalCycles; ++cycle) {
+        contr->DoCycle();
+
+        if (0 == cycle % (contr->SimulationParameters.CyclesBetweenSaves)) {
+            SaveDataToFile(contr, fullSaveFileName, miniSaveFileName, simDataFileName, cycle);
+        }
+
+
+        if (0 == cycle % (totalCycles / contr->SimulationParameters.NumberOfImageLines)) {
+            SavePictureEps(contr, savePictureFile);
+        }
+
+        auto doFinish = contr->PrintTimeExtrapolation(start_time, prev_measure, totalCycles, cycle);
+        if (doFinish) {
+            SaveDataToFile(contr, fullSaveFileName, miniSaveFileName, simDataFileName, cycle);
+            SavePictureEps(contr, savePictureFile);
+            break;
+        }
+    }
+
+    FinishEpsFile(contr, savePictureFile, pictSaveFileName, simDataFileName);
+}
+
+void InitEpsFile(std::shared_ptr<CBaseSimCtrl> & contr, EPSPlot& savePictureFile, std::string &pictSaveFileName) {
+    int id = MPI::COMM_WORLD.Get_rank();
+    if (id == contr->ManagerProcId && contr->SimulationParameters.SaveEpsPicture) {
+        savePictureFile.Init(pictSaveFileName.c_str(),
+                             0,
+                             0,
+                             contr->SimulationParameters.GetEpsDimensionX(),
+                             contr->SimulationParameters.GetEpsDimensionY());
+
+        savePictureFile.initParticleSavings(contr->SimulationParameters.ParticleDiameter);
+
+        contr->SaveIntoEps(savePictureFile);
+    }
+}
+
+void FinishEpsFile(std::shared_ptr<CBaseSimCtrl> & contr, EPSPlot& savePictureFile,
+                   std::string &pictSaveFileName,
+                   std::string &simDataFileName) {
+    int id = MPI::COMM_WORLD.Get_rank();
+
+    if (id == contr->ManagerProcId && contr->SimulationParameters.SaveEpsPicture) {
+        savePictureFile.Close();
+
+        std::fstream pictSaveTarStream("PictData_" + simDataFileName + ".tar", std::ios::app | std::ios::out);
+
+        Tar pictTarBall(pictSaveTarStream);
+        if (contr->SimulationParameters.SaveEpsPicture) {
+            pictTarBall.putFile(pictSaveFileName.c_str());
+//            unlink(pictSaveFileName.c_str());
+        }
+    }
+}
+
+void SavePictureEps(std::shared_ptr<CBaseSimCtrl> & contr, EPSPlot& savePictureFile) {
+    int id = MPI::COMM_WORLD.Get_rank();
+
+    contr->SyncBeforeSave();
+    if(contr->SimulationParameters.SaveEpsPicture && id == contr->ManagerProcId) {
+        contr->SaveIntoEps(savePictureFile);
+    }
+}
+
+void SaveDataToFile(std::shared_ptr<CBaseSimCtrl> &contr,
+                    std::string &fullSaveFileName,
+                    std::string &miniSaveFileName,
+                    std::string &simDataFileName,
+                    uint64_t cycle) {
+    int id = MPI::COMM_WORLD.Get_rank();
+
+    contr->SyncBeforeSave();
+
+    if (id == contr->ManagerProcId) {
+        std::fstream fullSaveTarStream("FullData_" + simDataFileName + ".tar", std::ios::app | std::ios::out);
+        std::fstream miniSaveTarStream("MiniData_" + simDataFileName + ".tar", std::ios::app | std::ios::out);
+
+        Tar fullTarBall(fullSaveTarStream);
+        Tar miniTarBall(miniSaveTarStream);
+
+        {
+            std::fstream minimalFileStream((miniSaveFileName + std::to_string(cycle)).c_str(), std::ios_base::out);
+            cereal::JSONOutputArchive minimalFileArchive(minimalFileStream);
+
+            switch (contr->SimulationParameters.SaveParticlesInfo) {
+                case true: {
+                    std::fstream mainFileStream((fullSaveFileName + std::to_string(cycle)).c_str(), std::ios_base::out);
+                    cereal::JSONOutputArchive mainFileArchive(mainFileStream);
+                    mainFileArchive(contr);
+                    contr->SimulationParameters.SaveParticlesInfo = false;
+                    minimalFileArchive(contr);
+                    contr->SimulationParameters.SaveParticlesInfo = true;
+                    break;
+                }
+                case false: {
+                    minimalFileArchive(contr);
+                    break;
+                }
+            }
+        }
+
+        switch (contr->SimulationParameters.SaveParticlesInfo) {
+            case true:
+                fullTarBall.putFile((fullSaveFileName + std::to_string(cycle)).c_str());
+                unlink((fullSaveFileName + std::to_string(cycle)).c_str());
+
+                miniTarBall.putFile((miniSaveFileName + std::to_string(cycle)).c_str());
+                unlink((miniSaveFileName + std::to_string(cycle)).c_str());
+                break;
+
+            case false:
+                miniTarBall.putFile((miniSaveFileName + std::to_string(cycle)).c_str());
+                unlink((miniSaveFileName + std::to_string(cycle)).c_str());
+                break;
+        }
+    }
+}
+
+void InitTar(std::string &simDataFileName) {
+    std::fstream fullSaveTarStream("FullData_" + simDataFileName + ".tar", std::ios_base::out);
+    std::fstream miniSaveTarStream("MiniData_" + simDataFileName + ".tar", std::ios_base::out);
+    std::fstream pictSaveTarStream("PictData_" + simDataFileName + ".tar", std::ios_base::out);
+
+    Tar fullTarBall(fullSaveTarStream);
+    Tar miniTarBall(miniSaveTarStream);
+    Tar pictTarBall(pictSaveTarStream);
+}
+
+void FinishTar(std::string &simDataFileName) {
+    std::fstream fullSaveTarStream("FullData_" + simDataFileName + ".tar", std::ios::app | std::ios::out);
+    std::fstream miniSaveTarStream("MiniData_" + simDataFileName + ".tar", std::ios::app | std::ios::out);
+    std::fstream pictSaveTarStream("PictData_" + simDataFileName + ".tar", std::ios::app | std::ios::out);
+
+    Tar fullTarBall(fullSaveTarStream);
+    Tar miniTarBall(miniSaveTarStream);
+    Tar pictTarBall(pictSaveTarStream);
+
     fullTarBall.finish();
     miniTarBall.finish();
     pictTarBall.finish();
-}
-
-void RunSimulations(std::shared_ptr<CBaseSimCtrl> sim,
-                    std::string &fullSaveFileName, std::string &miniSaveFileName, std::string &pictSaveFileName,
-                    Tar &fullTarBall, Tar &miniTarBall, Tar &pictTarBall) {
-    {
-
-        EPSPlot savePictureFile(pictSaveFileName.c_str(),
-                                0,
-                                0,
-                                sim->SimulationParameters.GetEpsDimensionX(),
-                                sim->SimulationParameters.GetEpsDimensionY());
-
-        savePictureFile.initParticleSavings(sim->SimulationParameters.ParticleDiameter);
-
-        sim->SaveIntoEps(savePictureFile);
-
-        std::chrono::time_point<std::chrono::system_clock> start_time, step_time;
-        start_time = std::chrono::system_clock::now();
-        uint64_t prev_measure = 0;
-
-        uint64_t totalCycles = sim->SimulationParameters.CyclesBetweenSaves * sim->SimulationParameters.NumberOfSavePoints;
-        sim->SimulationParameters.NumberOfImageLines = std::min(totalCycles, sim->SimulationParameters.NumberOfImageLines);
-
-        for (uint64_t cycle = 1; cycle <= totalCycles; ++cycle) {
-            sim->DoCycle();
-
-            if (0 == cycle % (sim->SimulationParameters.CyclesBetweenSaves)) {
-                SaveToFile(sim, fullSaveFileName, miniSaveFileName, fullTarBall, miniTarBall, cycle);
-            }
-
-            if (sim->SimulationParameters.SaveEpsPicture && 0 == cycle % (totalCycles / sim->SimulationParameters.NumberOfImageLines)) {
-                sim->SaveIntoEps(savePictureFile);
-            }
-
-            auto doFinish = sim->PrintTimeExtrapolation(start_time, prev_measure, totalCycles, cycle);
-            if (doFinish) {
-                SaveToFile(sim, fullSaveFileName, miniSaveFileName, fullTarBall, miniTarBall, cycle);
-
-                sim->SaveIntoEps(savePictureFile);
-                break;
-            }
-        }
-
-    }
-    if(sim->SimulationParameters.SaveEpsPicture) {
-        pictTarBall.putFile(pictSaveFileName.c_str());
-        unlink(pictSaveFileName.c_str());
-    }
-}
-
-void SaveToFile(std::shared_ptr<CBaseSimCtrl> &contr,
-                std::string &fullSaveFileName, std::string &miniSaveFileName,
-                Tar &fullTarBall, Tar &miniTarBall,
-                uint64_t cycle) {
-    {
-        std::fstream minimalFileStream((miniSaveFileName + std::to_string(cycle)).c_str(), std::ios_base::out);
-        cereal::JSONOutputArchive minimalFileArchive(minimalFileStream);
-
-        switch (contr->SimulationParameters.SaveParticlesInfo) {
-            case true: {
-                std::fstream mainFileStream((fullSaveFileName + std::to_string(cycle)).c_str(), std::ios_base::out);
-                cereal::JSONOutputArchive mainFileArchive(mainFileStream);
-
-                mainFileArchive(contr);
-                contr->SimulationParameters.SaveParticlesInfo = false;
-                minimalFileArchive(contr);
-                contr->SimulationParameters.SaveParticlesInfo = true;
-                break;
-            }
-            case false: {
-                minimalFileArchive(contr);
-                break;
-            }
-        }
-    }
-
-    switch (contr->SimulationParameters.SaveParticlesInfo) {
-        case true:
-            fullTarBall.putFile((fullSaveFileName + std::to_string(cycle)).c_str());
-            unlink((fullSaveFileName + std::to_string(cycle)).c_str());
-
-            miniTarBall.putFile((miniSaveFileName + std::to_string(cycle)).c_str());
-            unlink((miniSaveFileName + std::to_string(cycle)).c_str());
-            break;
-
-        case false:
-            miniTarBall.putFile((miniSaveFileName + std::to_string(cycle)).c_str());
-            unlink((miniSaveFileName + std::to_string(cycle)).c_str());
-            break;
-    }
 }

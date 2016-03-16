@@ -556,6 +556,8 @@ public:
 		stroke();
 	}
 
+	EPSPlot() {}
+
 	// Constructor
 	//
 	// filename = Path and name of output file
@@ -568,7 +570,7 @@ public:
 	// width may get clipped away by a program that imports the EPS. So add about a line width
 	// to the bounding box size. Most programs understand negative bounding box coordinates,
 	// some don't.
-	EPSPlot(const char *filename, float x1, float y1, float x2, float y2) {
+	void Init(const char *filename, float x1, float y1, float x2, float y2) {
 		stream = fopen(filename, "wt");
 		printString("%%!\n%%%%BoundingBox: ");
 		printFloatAndSpace(x1);
@@ -582,9 +584,13 @@ public:
 		fontsize = 0;
 	}
 
+    void Close(){
+        if (stream) fclose(stream);
+    }
+
 	// Destructor. Closes file
 	~EPSPlot() {
-		if (stream) fclose(stream);
+
 	};
 };
 

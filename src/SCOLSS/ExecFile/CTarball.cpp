@@ -14,17 +14,10 @@
 #include <ctime>
 #include <unistd.h>
 #include <sstream>
+#include <SCOLSS/ExecFile/CMyException.h>
 #include "CTarball.h"
 
 #define TARHEADER static_cast<PosixTarHeader*>(header)
-
-class MyException : public std::exception {
-    std::string s;
-public:
-    MyException(std::string _s) : s(_s){}
-    ~MyException() throw () {}
-    const char* what() const throw() { return s.c_str(); }
-};
 
 struct PosixTarHeader
 {
@@ -107,7 +100,7 @@ Tar::Tar(std::ostream& out):_finished(false),out(out) {
 
 Tar::~Tar() {
     if (!_finished) {
-        std::cerr << "[warning]tar file was not finished." << std::endl;
+//        std::cerr << "[warning]tar file was not finished." << std::endl;
     }
 }
 
