@@ -86,4 +86,6 @@ extern "C" void Function_AutoCorrelationInCluster(double *_averAutoCorr,
                                                   int * _ptIndexes,
                                                   int * _ptIndexCount);
 
+extern "C" void Function_GetParticlesAngles(double * angles_x, double * angles_y, double * angles_z, double * angle_phi, char ** particles, int * _ptCount);
+
 #endif //PROJECT_EXTENSIONDEFS_H

@@ -722,3 +722,16 @@ extern "C" void Function_AutoCorrelationInCluster(double *_averAutoCorr,
 
     *_averAutoCorr = corrs/((double)*_ptIndexCount);
 }
+
+extern "C" void Function_GetParticlesAngles(double * angles_x, double * angles_y, double * angles_z, double * angle_phi, char ** particles, int * _ptCount){
+    auto pts = LoadParticles(*particles, *_ptCount);
+
+    for (int i = 0; i < *_ptCount; ++i) {
+        angles_z[i] = std::acos(pts[i].GetOrientation().Z);
+
+        angles_y[i] = std::acos(pts[i].GetOrientation().Y);
+        angles_x[i] = std::acos(pts[i].GetOrientation().X);
+
+        angle_phi[i] = std::atan(pts[i].GetOrientation().Y / pts[i].GetOrientation().X);
+    }
+}
