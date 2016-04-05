@@ -159,6 +159,7 @@ class CreateSampleRunFiles:
             save_pics_data = "true"
         else:
             save_pics_data = "false"
+
         run_file_lines = ('#$ -S /bin/sh\n'
                           '#$ -j y\n'
                           '#$ -m eas\n'
