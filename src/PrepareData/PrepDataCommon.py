@@ -11,25 +11,6 @@ import MiscFunctions
 
 __author__ = 'mpolovyi'
 
-simData = {
-    "Base": {
-        "Density": [0.25, 0.5, 0.75],
-        "InitialConfiguration": [0],
-        "KbT": [0.6, 1.2, 1.8],
-        "LoadSavedState": 0,
-        "NumberOfSavePoints": 100000,
-        "NumberOfImageLines": 1,
-        "PtCount": [3200],
-        "SavedParticles": "",
-        "SaveParticlesInfo": True,
-        "SaveEpsPicture": False
-    },
-    "CyclesBetweenSaves": 200,
-    "TimeBetweenSaves": 0.25,
-    "Queue": "LONG"
-}
-
-
 def prompt_for_data(sim_data):
     if "-i" in sys.argv:
         data = raw_input("KbT = ")
@@ -169,8 +150,6 @@ class CreateSampleRunFiles:
 
         run_index_string = str(self.Index)
 
-        tar_files = "MiniData_Data_{0}.json.tar"
-
         if sim_data_to_save["Base"]["SaveParticlesInfo"]:
             save_full_data = "true"
         else:
@@ -180,12 +159,14 @@ class CreateSampleRunFiles:
             save_pics_data = "true"
         else:
             save_pics_data = "false"
-
         run_file_lines = ('#$ -S /bin/sh\n'
                           '#$ -j y\n'
                           '#$ -m eas\n'
                           '#$ -cwd\n'
                           '#$ -l virtual_free=800M -l h_vmem=800M\n'
+                          '#$ -v LD_LIBRARY_PATH=/usr/lib64/openmpi/bin'
+                          '#$ -v PATH=/usr/local/bin:/bin:/usr/bin:/usr/lib64/openmpi/lib'
+                          '#$ -pe mpi {6}\n'
                           '#$ -q {0}\n'
                           '\n'
                           'MAX_NUMBER_OF_CP=5\n'
@@ -206,14 +187,16 @@ class CreateSampleRunFiles:
                           '  cp ${{1}} ${{2}}\n'
                           '}}\n'
                           '\n'
-                          'cp $SGE_O_WORKDIR/ExecFile $TMPDIR\n'
+                          'hostname >> time_{1}.txt\n'
+                          'limited_copy $SGE_O_WORKDIR/ExecFile $TMPDIR\n'
                           '\n'
                           'limited_copy $SGE_O_WORKDIR/Data_{1}.json $TMPDIR\n'
                           '\n'
                           'cd $TMPDIR\n'
-                          '(time ./ExecFile Data_{1}.json {2} {3}) >&time_{1}.txt\n'
+                          '/usr/lib64/openmpi/bin/mpirun -np {6} ./ExecFile Data_{1}.json {2} {3} >& time_{1}.txt\n'
                           '\n'
-                          'cp MiniData_Data_{1}.json.tar $SGE_O_WORKDIR\n'
+                          'limited_copy time_{1}.txt $SGE_O_WORKDIR\n'
+                          'limited_copy MiniData_Data_{1}.json.tar $SGE_O_WORKDIR\n'
                           '\n'
                           'if {4}; then\n'
                           '  limited_copy FullData_Data_{1}.json.tar $SGE_O_WORKDIR 5m\n'
@@ -223,9 +206,10 @@ class CreateSampleRunFiles:
                           '  limited_copy PicsData_Data_{1}.json.tar $SGE_O_WORKDIR 5m\n'
                           'fi\n'
                           '\n'
-                          'rm *\n'
+                          'rm -r *\n'
                           ).format(sim_data_to_save["Queue"], run_index_string, self.SimulationType,
-                                   str(self.SamplesPerRun), save_full_data, save_pics_data)
+                                   str(self.SamplesPerRun), save_full_data, save_pics_data, sim_data_to_save["Threads"])
+
 
         temp_run_file_name = "r{0}".format(run_index_string)
         with open(temp_run_file_name, "w") as run_file:
@@ -316,17 +300,17 @@ def save_data(last_submitted, sim_data, sim_type):
     tar = sh.Command("tar")
 
     for name, tar_pattern in iterate_over_folders(sim_data, [create_mini_tar_names], sim_type):
-        tar("-czpf", name, tar_pattern)
+        tar("-czpf", name, sh.glob(tar_pattern))
 
     for name, tar_pattern in iterate_over_folders(sim_data, [create_full_tar_names], sim_type):
         try:
-            tar("-czpf", name, tar_pattern)
+            tar("-czpf", name, sh.glob(tar_pattern))
         except:
             pass
 
     for name, tar_pattern in iterate_over_folders(sim_data, [create_pics_tar_names], sim_type):
         try:
-            tar("-czpf", name, tar_pattern)
+            tar("-czpf", name, sh.glob(tar_pattern))
         except:
             pass
 
@@ -363,7 +347,7 @@ def create_data_saved_file(sim_data, sim_type, name_creator, save_file_name):
         time.sleep(20 * 60)
     else:
         with open(save_file_name + ".tmp", "w") as data_saved:
-            for name in iterate_over_folders(sim_data, [name_creator], sim_type):
+            for name, tar_pattern in iterate_over_folders(sim_data, [name_creator], sim_type):
                 data_saved.write("scp grace:" + os.path.join(os.getcwd(), name) + " " + name + "\n")
                 data_saved.write("tar -xzf " + name + "\n")
                 data_saved.write("rm " + name + "\n")
