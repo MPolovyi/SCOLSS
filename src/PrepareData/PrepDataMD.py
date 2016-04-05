@@ -6,7 +6,7 @@ __author__ = 'mpolovyi'
 
 simData = {
     "Base": {
-        "Density": [0.25], # 0.5, 0.75],
+        "Density": [0.25, 0.5, 0.75], # 0.5, 0.75],
         "InitialConfiguration": [0, 1],
         "KbT": [1],# 1.2, 1.8],
         "LoadSavedState": 0,
@@ -20,7 +20,7 @@ simData = {
     "CyclesBetweenSaves": 200000,
     "TimeBetweenSaves": 0.2,
     "Queue": "LONG",
-    "Threads": 8
+    "Threads": 4
 }
 
 
