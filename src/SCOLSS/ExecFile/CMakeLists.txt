@@ -1,5 +1,4 @@
 set(EXEC_FILE_SOURCES
-        trace.c
         main.cpp
         CTarball.cpp
         CTarball.h

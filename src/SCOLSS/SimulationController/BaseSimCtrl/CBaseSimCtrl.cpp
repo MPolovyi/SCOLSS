@@ -9,9 +9,9 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
     {
         printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
     }
-    int procCount = MPI::COMM_WORLD.Get_size();
-    ManagerProcId = procCount - 1;
-    ChildProcCount = procCount - 1;
+    ProcCount = MPI::COMM_WORLD.Get_size();
+    ManagerProcId = ProcCount - 1;
+    ChildProcCount = ProcCount - 1;
 
     Cycles = 0;
     epsLine = 1;
@@ -31,9 +31,10 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
 void CBaseSimCtrl::CreateDataMapping() {
     int currentId = MPI::COMM_WORLD.Get_rank();
     {
-        printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+        printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
     }
-    
+
+    bool cleared = false;
     if (ProcessMapFull.size() != ProcCount
         || ProcessMap_old.size() != ProcCount
         || ProcessMap_new.size() != ProcCount) {
@@ -42,31 +43,35 @@ void CBaseSimCtrl::CreateDataMapping() {
         ProcessMap_old.clear();
         ProcessMap_new.clear();
 
-        for (int procId = 0; procId < ProcCount; ++procId) {
-            ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
-            ProcessMapFull[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
-
-            ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
-            ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
-
-            ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
-            ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId);
-        }
+        cleared = true;
     }
 
     for (int procId = 0; procId < ProcCount; ++procId) {
+        if (cleared) {
+            ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
+            ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
+            ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
+        }
+
+        ProcessMapFull[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
+        ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
+        ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId);
+    }
+
+
+    for (int procId = 0; procId < ProcCount; ++procId) {
         ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId,
-                                    procId == ProcCount-1 ? ProcessMap_old[0].begin() : ProcessMap_old[procId + 1].begin(),
-                                    procId == 0 ? ProcessMap_old[ProcCount-1].last() : ProcessMap_old[procId - 1].last());
+                                    procId == ProcCount - 1 ? ProcessMap_old[0].begin() : ProcessMap_old[procId + 1].begin(),
+                                    procId == 0 ? ProcessMap_old[ProcCount - 1].last() : ProcessMap_old[procId - 1].last());
 
         ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId,
-                                    procId == ProcCount-1 ? ProcessMap_new[0].begin() : ProcessMap_new[procId + 1].begin(),
-                                    procId == 0 ? ProcessMap_new[ProcCount-1].last() : ProcessMap_new[procId - 1].last());
+                                    procId == ProcCount - 1 ? ProcessMap_new[0].begin() : ProcessMap_new[procId + 1].begin(),
+                                    procId == 0 ? ProcessMap_new[ProcCount - 1].last() : ProcessMap_new[procId - 1].last());
     }
 
 //    int currentId = MPI::COMM_WORLD.Get_rank();
     std::cout << "mapping " << &ProcessMapFull[currentId] << " " << &ProcessMap_old[currentId] << " " << &ProcessMap_new[currentId]
-    << " " << &particles_old(__PRETTY_FUNCTION__)[currentId * PerProcCount] << " " << &particles_new(__PRETTY_FUNCTION__)[currentId * PerProcCount] << "\n";
+    << " " << &particles_old[currentId * PerProcCount] << " " << &particles_new[currentId * PerProcCount] << "\n";
 }
 
 CYukawaDipolePt CBaseSimCtrl::getPt(size_t i) {
@@ -315,7 +320,7 @@ void CBaseSimCtrl::SyncToMain() {
         printf ("exit %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
     }
     std::cout << "save " << &ProcessMapFull[currentId] << " " << &ProcessMap_old[currentId] << " " << &ProcessMap_new[currentId]
-                 << " " << &particles_old(__PRETTY_FUNCTION__)[currentId * PerProcCount] << " " << &particles_new(__PRETTY_FUNCTION__)[currentId * PerProcCount] << "\n";
+                 << " " << &particles_old[currentId * PerProcCount] << " " << &particles_new[currentId * PerProcCount] << "\n";
 }
 
 void CBaseSimCtrl::SyncInCycle() {
