@@ -19,49 +19,49 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
     InitRandomGenerator();
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
         auto pt = getPt(i);
-        particles_new(__PRETTY_FUNCTION__).push_back(pt);
-        particles_old(__PRETTY_FUNCTION__).push_back(pt);
+        particles_new.push_back(pt);
+        particles_old.push_back(pt);
     }
 
-    PerProcCount = SimulationParameters.PtCount / procCount;
+    PerProcCount = SimulationParameters.PtCount / ProcCount;
 
-    CreateDataMapping(procCount);
+    CreateDataMapping();
 }
 
-void CBaseSimCtrl::CreateDataMapping(int procCount) {
+void CBaseSimCtrl::CreateDataMapping() {
     int currentId = MPI::COMM_WORLD.Get_rank();
     {
         printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
     }
-
-    if (ProcessMapFull.size() != procCount
-        || ProcessMap_old.size() != procCount
-        || ProcessMap_new.size() != procCount) {
+    
+    if (ProcessMapFull.size() != ProcCount
+        || ProcessMap_old.size() != ProcCount
+        || ProcessMap_new.size() != ProcCount) {
 
         ProcessMapFull.clear();
         ProcessMap_old.clear();
         ProcessMap_new.clear();
 
-        for (int procId = 0; procId < procCount; ++procId) {
+        for (int procId = 0; procId < ProcCount; ++procId) {
             ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
-            ProcessMapFull[procId].Init(&particles_old(__PRETTY_FUNCTION__)[procId * PerProcCount], PerProcCount, procId);
+            ProcessMapFull[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
 
             ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
-            ProcessMap_old[procId].Init(&particles_old(__PRETTY_FUNCTION__)[procId * PerProcCount], PerProcCount, procId);
+            ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
 
             ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
-            ProcessMap_new[procId].Init(&particles_new(__PRETTY_FUNCTION__)[procId * PerProcCount], PerProcCount, procId);
+            ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId);
         }
     }
 
-    for (int procId = 0; procId < procCount; ++procId) {
-        ProcessMap_old[procId].Init(&particles_old(__PRETTY_FUNCTION__)[procId * PerProcCount], PerProcCount, procId,
-                                    procId == procCount-1 ? ProcessMap_old[0].begin() : ProcessMap_old[procId + 1].begin(),
-                                    procId == 0 ? ProcessMap_old[procCount-1].last() : ProcessMap_old[procId - 1].last());
+    for (int procId = 0; procId < ProcCount; ++procId) {
+        ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId,
+                                    procId == ProcCount-1 ? ProcessMap_old[0].begin() : ProcessMap_old[procId + 1].begin(),
+                                    procId == 0 ? ProcessMap_old[ProcCount-1].last() : ProcessMap_old[procId - 1].last());
 
-        ProcessMap_new[procId].Init(&particles_new(__PRETTY_FUNCTION__)[procId * PerProcCount], PerProcCount, procId,
-                                    procId == procCount-1 ? ProcessMap_new[0].begin() : ProcessMap_new[procId + 1].begin(),
-                                    procId == 0 ? ProcessMap_new[procCount-1].last() : ProcessMap_new[procId - 1].last());
+        ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId,
+                                    procId == ProcCount-1 ? ProcessMap_new[0].begin() : ProcessMap_new[procId + 1].begin(),
+                                    procId == 0 ? ProcessMap_new[ProcCount-1].last() : ProcessMap_new[procId - 1].last());
     }
 
 //    int currentId = MPI::COMM_WORLD.Get_rank();
@@ -151,7 +151,7 @@ double CBaseSimCtrl::GetAveragePotentialEnergy() const {
     double ret = 0;
 
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
-        auto &pt = particles_old_const(__PRETTY_FUNCTION__)[i];
+        auto &pt = particles_old[i];
 
         ret += GetParticlePotentialEnergy(i);
     }
@@ -161,10 +161,10 @@ double CBaseSimCtrl::GetAveragePotentialEnergy() const {
 
 void CBaseSimCtrl::SaveForPovray(std::fstream &ofstr) {
     for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
-        auto rot = particles_old(__PRETTY_FUNCTION__)[i].Orientation;
+        auto rot = particles_old[i].Orientation;
         ofstr
         << "Colloid(<0, 0, "
-        << particles_old(__PRETTY_FUNCTION__)[i].Coordinates / SimulationParameters.ParticleDiameter
+        << particles_old[i].Coordinates / SimulationParameters.ParticleDiameter
         << ">, <" << rot.X << ", " << rot.Y << ", " << rot.Z << ">)" <<
         std::endl;
     }
@@ -173,7 +173,7 @@ void CBaseSimCtrl::SaveForPovray(std::fstream &ofstr) {
 void CBaseSimCtrl::SaveIntoEps(EPSPlot &outFile) {
     epsLine++;
     for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
-        auto &pt = particles_old(__PRETTY_FUNCTION__)[i];
+        auto &pt = particles_old[i];
         auto orient = pt.Orientation;
 
         float colR;
@@ -212,11 +212,11 @@ CQuaternion CBaseSimCtrl::GetRandomUnitQuaternion() {
 }
 
 double CBaseSimCtrl::GetParticlePotentialEnergy(size_t ptIndex) const {
-    return particles_old_const(__PRETTY_FUNCTION__)[ptIndex].GetPotentialEnergy(particles_old_const(__PRETTY_FUNCTION__)[GetNext(ptIndex)],
-                                                                    particles_old_const(__PRETTY_FUNCTION__)[GetNext(ptIndex)].GetDistanceLeft(particles_old_const(__PRETTY_FUNCTION__)[ptIndex],
+    return particles_old[ptIndex].GetPotentialEnergy(particles_old[GetNext(ptIndex)],
+                                                                    particles_old[GetNext(ptIndex)].GetDistanceLeft(particles_old[ptIndex],
                                                                                                                                    SimulationParameters.SystemSize))
-           + particles_old_const(__PRETTY_FUNCTION__)[ptIndex].GetPotentialEnergy(particles_old_const(__PRETTY_FUNCTION__)[GetPrevious(ptIndex)],
-                                                                      particles_old_const(__PRETTY_FUNCTION__)[GetPrevious(ptIndex)].GetDistanceRight(particles_old_const(__PRETTY_FUNCTION__)[ptIndex],
+           + particles_old[ptIndex].GetPotentialEnergy(particles_old[GetPrevious(ptIndex)],
+                                                                      particles_old[GetPrevious(ptIndex)].GetDistanceRight(particles_old[ptIndex],
                                                                                                                                           SimulationParameters.SystemSize));
 
 }
@@ -238,7 +238,7 @@ double CBaseSimCtrl::GetOrderParameter() const {
 std::vector<double> CBaseSimCtrl::GetParticlesOrientationZ() const {
     std::vector<double> ret;
 
-    for (auto &pt : particles_old_const(__PRETTY_FUNCTION__)) {
+    for (auto &pt : particles_old) {
         ret.push_back(pt.Orientation.Z);
     }
 
@@ -248,7 +248,7 @@ std::vector<double> CBaseSimCtrl::GetParticlesOrientationZ() const {
 std::vector<double> CBaseSimCtrl::GetParticleCoordinatesZ() const {
     std::vector<double> ret;
 
-    for (auto &pt : particles_old_const(__PRETTY_FUNCTION__)) {
+    for (auto &pt : particles_old) {
         ret.push_back(pt.Coordinates);
     }
 
@@ -289,11 +289,11 @@ void CBaseSimCtrl::SyncBeforeSave() {
     {
         printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
     }
-    ProcessMapFull = ProcessMap_old;
     SyncToMain();
 }
 
 void CBaseSimCtrl::SyncToMain() {
+    CreateDataMapping();
     int currentId = MPI::COMM_WORLD.Get_rank();
     {
         printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
@@ -319,6 +319,7 @@ void CBaseSimCtrl::SyncToMain() {
 }
 
 void CBaseSimCtrl::SyncInCycle() {
+    CreateDataMapping();
     int currentId = MPI::COMM_WORLD.Get_rank();
     {
         printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
@@ -330,9 +331,9 @@ void CBaseSimCtrl::SyncInCycle() {
     int nexId = currentId + 1;
 
     if (prevId == -1) {
-        prevId = procCount - 1;
+        prevId = ProcCount - 1;
     }
-    if (nexId == procCount) {
+    if (nexId == ProcCount) {
         nexId = 0;
     }
 

@@ -66,7 +66,7 @@ public:
         }
 
         SyncInCycle();
-        std::swap(particles_old(__PRETTY_FUNCTION__), particles_new(__PRETTY_FUNCTION__));
+        std::swap(particles_old, particles_new);
         std::swap(ProcessMap_old, ProcessMap_new);
 
 //        std::cout << "  " << &ProcessMapFull[currentId] << " " << &ProcessMap_old[currentId] << " " << &ProcessMap_new[currentId]

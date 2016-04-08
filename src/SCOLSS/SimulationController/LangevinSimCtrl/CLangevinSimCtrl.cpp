@@ -5,8 +5,8 @@
 #include "CLangevinSimCtrl.h"
 
 void CLangevinSimCtrl::MoveParticleVerlet(size_t ptIndex) {
-    CYukawaDipolePt &pt_new = particles_new(__PRETTY_FUNCTION__)[ptIndex];
-    CYukawaDipolePt &pt_old = particles_old(__PRETTY_FUNCTION__)[ptIndex];
+    CYukawaDipolePt &pt_new = particles_new[ptIndex];
+    CYukawaDipolePt &pt_old = particles_old[ptIndex];
 
     pt_new.ForceRandom = translationNormalDistribution(rnd_gen);
 
@@ -23,8 +23,8 @@ void CLangevinSimCtrl::MoveParticleVerlet(size_t ptIndex) {
 }
 
 void CLangevinSimCtrl::AccelerateMoveParticleVerlet(size_t ptIndex) {
-    CYukawaDipolePt &pt_new = particles_new(__PRETTY_FUNCTION__)[ptIndex];
-    CYukawaDipolePt &pt_old = particles_old(__PRETTY_FUNCTION__)[ptIndex];
+    CYukawaDipolePt &pt_new = particles_new[ptIndex];
+    CYukawaDipolePt &pt_old = particles_old[ptIndex];
 
     auto dv = SimulationParameters.TimeStep * (pt_new.ForceOld + GetForceNew(ptIndex)) / (2 * SimulationParameters.ParticleMass)
               - SimulationParameters.AlphaTranslational * (pt_new.Coordinates - pt_old.Coordinates) / SimulationParameters.ParticleMass
@@ -36,8 +36,8 @@ void CLangevinSimCtrl::AccelerateMoveParticleVerlet(size_t ptIndex) {
 }
 
 void CLangevinSimCtrl::RotateParticleVerlet(size_t ptIndex) {
-    CYukawaDipolePt &pt_new = particles_new(__PRETTY_FUNCTION__)[ptIndex];
-    CYukawaDipolePt &pt_old = particles_old(__PRETTY_FUNCTION__)[ptIndex];
+    CYukawaDipolePt &pt_new = particles_new[ptIndex];
+    CYukawaDipolePt &pt_old = particles_old[ptIndex];
 
     pt_new.TorqueRandom = GetNormalRandomVector(rotationNormalDistribution);
     pt_new.TorqueOld = GetTorqueOld(ptIndex);
@@ -55,8 +55,8 @@ void CLangevinSimCtrl::RotateParticleVerlet(size_t ptIndex) {
 }
 
 void CLangevinSimCtrl::AccelerateRotateParticleVerlet(size_t ptIndex) {
-    CYukawaDipolePt &pt_new = particles_new(__PRETTY_FUNCTION__)[ptIndex];
-    CYukawaDipolePt &pt_old = particles_old(__PRETTY_FUNCTION__)[ptIndex];
+    CYukawaDipolePt &pt_new = particles_new[ptIndex];
+    CYukawaDipolePt &pt_old = particles_old[ptIndex];
 
     pt_new.AngularVelocity = pt_old.AngularVelocity
                              + SimulationParameters.TimeStep * (pt_new.TorqueOld + GetTorqueNew(ptIndex)) / (2 * SimulationParameters.Inertia)
@@ -65,26 +65,26 @@ void CLangevinSimCtrl::AccelerateRotateParticleVerlet(size_t ptIndex) {
 }
 
 double CLangevinSimCtrl::GetForceOld(size_t ptIndex) {
-    return particles_old(__PRETTY_FUNCTION__)[ptIndex].GetForceFromOther(particles_old(__PRETTY_FUNCTION__)[GetPrevious(ptIndex)],
-                                                             particles_old(__PRETTY_FUNCTION__)[GetNext(ptIndex)]);
+    return particles_old[ptIndex].GetForceFromOther(particles_old[GetPrevious(ptIndex)],
+                                                             particles_old[GetNext(ptIndex)]);
 
 }
 
 double CLangevinSimCtrl::GetForceNew(size_t ptIndex) {
-    return particles_new(__PRETTY_FUNCTION__)[ptIndex].GetForceFromOther(particles_old(__PRETTY_FUNCTION__)[GetPrevious(ptIndex)],
-                                                             particles_old(__PRETTY_FUNCTION__)[GetNext(ptIndex)]);
+    return particles_new[ptIndex].GetForceFromOther(particles_old[GetPrevious(ptIndex)],
+                                                             particles_old[GetNext(ptIndex)]);
 
 }
 
 CVector CLangevinSimCtrl::GetTorqueOld(size_t ptIndex) {
-    return particles_old(__PRETTY_FUNCTION__)[ptIndex].GetTorqueFromOther(particles_old(__PRETTY_FUNCTION__)[GetPrevious(ptIndex)],
-                                                              particles_old(__PRETTY_FUNCTION__)[GetNext(ptIndex)]);
+    return particles_old[ptIndex].GetTorqueFromOther(particles_old[GetPrevious(ptIndex)],
+                                                              particles_old[GetNext(ptIndex)]);
 
 }
 
 CVector CLangevinSimCtrl::GetTorqueNew(size_t ptIndex) {
-    return particles_new(__PRETTY_FUNCTION__)[ptIndex].GetTorqueFromOther(particles_new(__PRETTY_FUNCTION__)[GetPrevious(ptIndex)],
-                                                              particles_new(__PRETTY_FUNCTION__)[GetNext(ptIndex)]);
+    return particles_new[ptIndex].GetTorqueFromOther(particles_new[GetPrevious(ptIndex)],
+                                                              particles_new[GetNext(ptIndex)]);
 
 }
 
@@ -92,7 +92,7 @@ double CLangevinSimCtrl::GetAverageKineticEnergy() const {
     double ret = 0;
 
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
-        auto &pt = particles_old_const(__PRETTY_FUNCTION__)[i];
+        auto &pt = particles_old[i];
 
         ret += SimulationParameters.ParticleMass * pt.Velocity * pt.Velocity / 2;
         ret += SimulationParameters.Inertia * pt.AngularVelocity.GetLengthSquared() / 2;
@@ -105,7 +105,7 @@ double CLangevinSimCtrl::GetRotationalEnergy() const {
     double ret = 0;
 
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
-        auto &pt = particles_old_const(__PRETTY_FUNCTION__)[i];
+        auto &pt = particles_old[i];
 
         ret += SimulationParameters.Inertia * pt.AngularVelocity.GetLengthSquared() / 2;
     }
@@ -117,7 +117,7 @@ double CLangevinSimCtrl::GetTranslationalEnergy() const {
     double ret = 0;
 
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
-        auto &pt = particles_old_const(__PRETTY_FUNCTION__)[i];
+        auto &pt = particles_old[i];
 
         ret += SimulationParameters.ParticleMass * pt.Velocity * pt.Velocity / 2;
     }
@@ -132,8 +132,8 @@ double CLangevinSimCtrl::GetSimulationTime() const {
 double CLangevinSimCtrl::GetAverageDispl() const {
     double ret = 0;
 
-    for (size_t i = 0; i < particles_old_const(__PRETTY_FUNCTION__).size(); ++i) {
-        const CYukawaDipolePt &pt_old = particles_old_const(__PRETTY_FUNCTION__)[i];
+    for (size_t i = 0; i < particles_old.size(); ++i) {
+        const CYukawaDipolePt &pt_old = particles_old[i];
         auto dr = pow(pt_old.Coordinates, 2);
 
         ret += dr;
@@ -145,8 +145,8 @@ double CLangevinSimCtrl::GetAverageDispl() const {
 double CLangevinSimCtrl::GetAverAngularDisplX() const {
     double ret = 0;
 
-    for (size_t i = 0; i < particles_old_const(__PRETTY_FUNCTION__).size(); ++i) {
-        const CYukawaDipolePt &pt_old = particles_old_const(__PRETTY_FUNCTION__)[i];
+    for (size_t i = 0; i < particles_old.size(); ++i) {
+        const CYukawaDipolePt &pt_old = particles_old[i];
 
         ret += pow(pt_old.AngularDisplacement.X, 2);
     }
@@ -157,8 +157,8 @@ double CLangevinSimCtrl::GetAverAngularDisplX() const {
 double CLangevinSimCtrl::GetAverAngularDispl() const {
     double ret = 0;
 
-    for (size_t i = 0; i < particles_old_const(__PRETTY_FUNCTION__).size(); ++i) {
-        const CYukawaDipolePt &pt_old = particles_old_const(__PRETTY_FUNCTION__)[i];
+    for (size_t i = 0; i < particles_old.size(); ++i) {
+        const CYukawaDipolePt &pt_old = particles_old[i];
 
         ret += pt_old.AngularDisplacement.GetLengthSquared();
     }
@@ -169,8 +169,8 @@ double CLangevinSimCtrl::GetAverAngularDispl() const {
 double CLangevinSimCtrl::GetAverAngularDisplY() const {
     double ret = 0;
 
-    for (size_t i = 0; i < particles_old_const(__PRETTY_FUNCTION__).size(); ++i) {
-        const CYukawaDipolePt &pt_old = particles_old_const(__PRETTY_FUNCTION__)[i];
+    for (size_t i = 0; i < particles_old.size(); ++i) {
+        const CYukawaDipolePt &pt_old = particles_old[i];
 
         ret += pow(pt_old.AngularDisplacement.Y, 2);
     }
@@ -181,8 +181,8 @@ double CLangevinSimCtrl::GetAverAngularDisplY() const {
 double CLangevinSimCtrl::GetAverAngularDisplZ() const {
     double ret = 0;
 
-    for (size_t i = 0; i < particles_old_const(__PRETTY_FUNCTION__).size(); ++i) {
-        const CYukawaDipolePt &pt_old = particles_old_const(__PRETTY_FUNCTION__)[i];
+    for (size_t i = 0; i < particles_old.size(); ++i) {
+        const CYukawaDipolePt &pt_old = particles_old[i];
 
         ret += pow(pt_old.AngularDisplacement.Z, 2);
     }
