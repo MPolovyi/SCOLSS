@@ -28,6 +28,7 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
 void CBaseSimCtrl::CreateDataMapping() {
     int currentId = MPI::COMM_WORLD.Get_rank();
     
+    bool cleared = false;
     if (ProcessMapFull.size() != ProcCount
         || ProcessMap_old.size() != ProcCount
         || ProcessMap_new.size() != ProcCount) {
@@ -36,26 +37,30 @@ void CBaseSimCtrl::CreateDataMapping() {
         ProcessMap_old.clear();
         ProcessMap_new.clear();
 
-        for (int procId = 0; procId < ProcCount; ++procId) {
-            ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
-            ProcessMapFull[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
-
-            ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
-            ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
-
-            ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
-            ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId);
-        }
+        cleared = true;
     }
 
     for (int procId = 0; procId < ProcCount; ++procId) {
+        if (cleared) {
+            ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
+            ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
+            ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
+        }
+
+        ProcessMapFull[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
+        ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
+        ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId);
+    }
+
+
+    for (int procId = 0; procId < ProcCount; ++procId) {
         ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId,
-                                    procId == ProcCount-1 ? ProcessMap_old[0].begin() : ProcessMap_old[procId + 1].begin(),
-                                    procId == 0 ? ProcessMap_old[ProcCount-1].last() : ProcessMap_old[procId - 1].last());
+                                    procId == ProcCount - 1 ? ProcessMap_old[0].begin() : ProcessMap_old[procId + 1].begin(),
+                                    procId == 0 ? ProcessMap_old[ProcCount - 1].last() : ProcessMap_old[procId - 1].last());
 
         ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId,
-                                    procId == ProcCount-1 ? ProcessMap_new[0].begin() : ProcessMap_new[procId + 1].begin(),
-                                    procId == 0 ? ProcessMap_new[ProcCount-1].last() : ProcessMap_new[procId - 1].last());
+                                    procId == ProcCount - 1 ? ProcessMap_new[0].begin() : ProcessMap_new[procId + 1].begin(),
+                                    procId == 0 ? ProcessMap_new[ProcCount - 1].last() : ProcessMap_new[procId - 1].last());
     }
 }
 
