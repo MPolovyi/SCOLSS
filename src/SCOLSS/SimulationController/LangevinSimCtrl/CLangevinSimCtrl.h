@@ -34,18 +34,23 @@ public:
     }
 
     CLangevinSimCtrl(CLangevinSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
+        int currentId = MPI::COMM_WORLD.Get_rank();
+        {
+            printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+        }
         InitRandomGenerator();
     }
 
-    virtual void InitRandomGenerator() {
-        CBaseSimCtrl::InitRandomGenerator();
-
-        translationNormalDistribution = std::normal_distribution<double>(0, SimulationParameters.DistributionDeviationTranslation);
-        rotationNormalDistribution = std::normal_distribution<double>(0, SimulationParameters.DistributionDeviationRotation);
-    };
-
     void DoCycle() {
+        int currentId = MPI::COMM_WORLD.Get_rank();
+        {
+            printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+        }
         Cycles += 1;
+
+//        int currentId = MPI::COMM_WORLD.Get_rank();
+//        std::cout << " " << &ProcessMapFull[currentId] << " " << &ProcessMap_old[currentId] << " " << &ProcessMap_new[currentId]
+//        << " " << &particles_old()[currentId * PerProcCount] << " " << &particles_new()[currentId * PerProcCount] << "\n";
 
         int id = MPI::COMM_WORLD.Get_rank();
         for (size_t i = ProcessMapFull[id].beginIndex(); i < ProcessMapFull[id].endIndex(); i++) {
@@ -61,7 +66,11 @@ public:
         }
 
         SyncInCycle();
-        std::swap(particles_old, particles_new);
+        std::swap(particles_old(__PRETTY_FUNCTION__), particles_new(__PRETTY_FUNCTION__));
+        std::swap(ProcessMap_old, ProcessMap_new);
+
+//        std::cout << "  " << &ProcessMapFull[currentId] << " " << &ProcessMap_old[currentId] << " " << &ProcessMap_new[currentId]
+//        << " " << &particles_old()[currentId * PerProcCount] << " " << &particles_new()[currentId * PerProcCount] << "\n";
     };
 
     void MoveParticleVerlet(size_t ptIndex);
@@ -100,6 +109,17 @@ protected:
     double GetAverAngularDisplZ() const;
 
     CVector GetNormalRandomVector(std::normal_distribution<double> &normalDistribution);
+
+    virtual void InitRandomGenerator() {
+        int currentId = MPI::COMM_WORLD.Get_rank();
+        {
+            printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+        }
+        CBaseSimCtrl::InitRandomGenerator();
+
+        translationNormalDistribution = std::normal_distribution<double>(0, SimulationParameters.DistributionDeviationTranslation);
+        rotationNormalDistribution = std::normal_distribution<double>(0, SimulationParameters.DistributionDeviationRotation);
+    };
 };
 
 #endif //PROJECT_CLANGEVINSIMCTRL_H

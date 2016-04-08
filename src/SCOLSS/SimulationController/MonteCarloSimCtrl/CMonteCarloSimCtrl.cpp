@@ -16,35 +16,39 @@ bool CMonteCarloSimCtrl::AcceptMove(double energy, double oldEnergy) {
 }
 
 void CMonteCarloSimCtrl::DoTestMove(size_t ptIndex) {
-    auto beforeEnergy = GetParticlePotentialEnergy(ptIndex);
-    oldParticleCoordinates = particles_old[ptIndex].Coordinates;
+    auto beforeEnergy = GetParticlePotentialEnergy(GetPrevious(ptIndex));
+
+    oldParticleCoordinates = particles_old(__PRETTY_FUNCTION__)[ptIndex].Coordinates;
 
     double move = uniformDistributionMove(rnd_gen);
 
-    particles_old[ptIndex].Coordinates += move;
-    AccountForBorderAfterMove(particles_old[ptIndex]);
+    particles_old(__PRETTY_FUNCTION__)[ptIndex].Coordinates += move;
+    AccountForBorderAfterMove(particles_old(__PRETTY_FUNCTION__)[ptIndex]);
 
-    auto afterEnergy = GetParticlePotentialEnergy(ptIndex);
+    auto afterEnergy = GetParticlePotentialEnergy(GetPrevious(ptIndex));
+
     if (AcceptMove(afterEnergy, beforeEnergy)) {
         return;
     }
     else {
-        particles_old[ptIndex].Coordinates = oldParticleCoordinates;
+        particles_old(__PRETTY_FUNCTION__)[ptIndex].Coordinates = oldParticleCoordinates;
     }
 }
 
 void CMonteCarloSimCtrl::DoTestRotation(size_t ptIndex) {
-    auto beforeEnergy = GetParticlePotentialEnergy(ptIndex);
-    oldParticleRotation = particles_old[ptIndex].GetRotation();
+    auto beforeEnergy = GetParticlePotentialEnergy(GetPrevious(ptIndex));
 
-    particles_old[ptIndex].SetRotation(GetRandomUnitQuaternion());
+    oldParticleRotation = particles_old(__PRETTY_FUNCTION__)[ptIndex].GetRotation();
 
-    auto afterEnergy = GetParticlePotentialEnergy(ptIndex);
+    particles_old(__PRETTY_FUNCTION__)[ptIndex].SetRotation(GetRandomUnitQuaternion());
+
+    auto afterEnergy = GetParticlePotentialEnergy(GetPrevious(ptIndex));
+
     if (AcceptMove(afterEnergy, beforeEnergy)) {
         return;
     }
     else {
-        particles_old[ptIndex].SetRotation(oldParticleRotation);
+        particles_old(__PRETTY_FUNCTION__)[ptIndex].SetRotation(oldParticleRotation);
     }
 }
 

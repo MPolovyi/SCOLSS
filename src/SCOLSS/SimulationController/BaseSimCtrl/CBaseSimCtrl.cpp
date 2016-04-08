@@ -5,6 +5,10 @@
 #include "CBaseSimCtrl.h"
 
 CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
+    int currentId = MPI::COMM_WORLD.Get_rank();
+    {
+        printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+    }
     int procCount = MPI::COMM_WORLD.Get_size();
     ManagerProcId = procCount - 1;
     ChildProcCount = procCount - 1;
@@ -15,8 +19,8 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
     InitRandomGenerator();
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
         auto pt = getPt(i);
-        particles_new.push_back(pt);
-        particles_old.push_back(pt);
+        particles_new(__PRETTY_FUNCTION__).push_back(pt);
+        particles_old(__PRETTY_FUNCTION__).push_back(pt);
     }
 
     PerProcCount = SimulationParameters.PtCount / procCount;
@@ -25,28 +29,44 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
 }
 
 void CBaseSimCtrl::CreateDataMapping(int procCount) {
-    for (int procId = 0; procId < procCount; ++procId) {
-        ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
-        ProcessMapFull[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
+    int currentId = MPI::COMM_WORLD.Get_rank();
+    {
+        printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+    }
 
-        ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
-        ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId);
+    if (ProcessMapFull.size() != procCount
+        || ProcessMap_old.size() != procCount
+        || ProcessMap_new.size() != procCount) {
 
-        ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
-        ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId);
+        ProcessMapFull.clear();
+        ProcessMap_old.clear();
+        ProcessMap_new.clear();
+
+        for (int procId = 0; procId < procCount; ++procId) {
+            ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
+            ProcessMapFull[procId].Init(&particles_old(__PRETTY_FUNCTION__)[procId * PerProcCount], PerProcCount, procId);
+
+            ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
+            ProcessMap_old[procId].Init(&particles_old(__PRETTY_FUNCTION__)[procId * PerProcCount], PerProcCount, procId);
+
+            ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
+            ProcessMap_new[procId].Init(&particles_new(__PRETTY_FUNCTION__)[procId * PerProcCount], PerProcCount, procId);
+        }
     }
 
     for (int procId = 0; procId < procCount; ++procId) {
-        ProcessMap_old.push_back(CDataChunk<CYukawaDipolePt>());
-        ProcessMap_old[procId].Init(&particles_old[procId * PerProcCount], PerProcCount, procId,
+        ProcessMap_old[procId].Init(&particles_old(__PRETTY_FUNCTION__)[procId * PerProcCount], PerProcCount, procId,
                                     procId == procCount-1 ? ProcessMap_old[0].begin() : ProcessMap_old[procId + 1].begin(),
                                     procId == 0 ? ProcessMap_old[procCount-1].last() : ProcessMap_old[procId - 1].last());
 
-        ProcessMap_new.push_back(CDataChunk<CYukawaDipolePt>());
-        ProcessMap_new[procId].Init(&particles_new[procId * PerProcCount], PerProcCount, procId,
+        ProcessMap_new[procId].Init(&particles_new(__PRETTY_FUNCTION__)[procId * PerProcCount], PerProcCount, procId,
                                     procId == procCount-1 ? ProcessMap_new[0].begin() : ProcessMap_new[procId + 1].begin(),
                                     procId == 0 ? ProcessMap_new[procCount-1].last() : ProcessMap_new[procId - 1].last());
     }
+
+//    int currentId = MPI::COMM_WORLD.Get_rank();
+    std::cout << "mapping " << &ProcessMapFull[currentId] << " " << &ProcessMap_old[currentId] << " " << &ProcessMap_new[currentId]
+    << " " << &particles_old(__PRETTY_FUNCTION__)[currentId * PerProcCount] << " " << &particles_new(__PRETTY_FUNCTION__)[currentId * PerProcCount] << "\n";
 }
 
 CYukawaDipolePt CBaseSimCtrl::getPt(size_t i) {
@@ -131,7 +151,7 @@ double CBaseSimCtrl::GetAveragePotentialEnergy() const {
     double ret = 0;
 
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
-        auto &pt = particles_old[i];
+        auto &pt = particles_old_const(__PRETTY_FUNCTION__)[i];
 
         ret += GetParticlePotentialEnergy(i);
     }
@@ -141,10 +161,10 @@ double CBaseSimCtrl::GetAveragePotentialEnergy() const {
 
 void CBaseSimCtrl::SaveForPovray(std::fstream &ofstr) {
     for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
-        auto rot = particles_old[i].Orientation;
+        auto rot = particles_old(__PRETTY_FUNCTION__)[i].Orientation;
         ofstr
         << "Colloid(<0, 0, "
-        << particles_old[i].Coordinates / SimulationParameters.ParticleDiameter
+        << particles_old(__PRETTY_FUNCTION__)[i].Coordinates / SimulationParameters.ParticleDiameter
         << ">, <" << rot.X << ", " << rot.Y << ", " << rot.Z << ">)" <<
         std::endl;
     }
@@ -153,7 +173,7 @@ void CBaseSimCtrl::SaveForPovray(std::fstream &ofstr) {
 void CBaseSimCtrl::SaveIntoEps(EPSPlot &outFile) {
     epsLine++;
     for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
-        auto &pt = particles_old[i];
+        auto &pt = particles_old(__PRETTY_FUNCTION__)[i];
         auto orient = pt.Orientation;
 
         float colR;
@@ -192,12 +212,12 @@ CQuaternion CBaseSimCtrl::GetRandomUnitQuaternion() {
 }
 
 double CBaseSimCtrl::GetParticlePotentialEnergy(size_t ptIndex) const {
-    return particles_old[ptIndex].GetPotentialEnergy(particles_old[GetNext(ptIndex)],
-                                                     particles_old[GetNext(ptIndex)].GetDistanceLeft(particles_old[ptIndex],
-                                                                                                     SimulationParameters.SystemSize))
-           + particles_old[ptIndex].GetPotentialEnergy(particles_old[GetPrevious(ptIndex)],
-                                                       particles_old[GetPrevious(ptIndex)].GetDistanceRight(particles_old[ptIndex],
-                                                                                                            SimulationParameters.SystemSize));
+    return particles_old_const(__PRETTY_FUNCTION__)[ptIndex].GetPotentialEnergy(particles_old_const(__PRETTY_FUNCTION__)[GetNext(ptIndex)],
+                                                                    particles_old_const(__PRETTY_FUNCTION__)[GetNext(ptIndex)].GetDistanceLeft(particles_old_const(__PRETTY_FUNCTION__)[ptIndex],
+                                                                                                                                   SimulationParameters.SystemSize))
+           + particles_old_const(__PRETTY_FUNCTION__)[ptIndex].GetPotentialEnergy(particles_old_const(__PRETTY_FUNCTION__)[GetPrevious(ptIndex)],
+                                                                      particles_old_const(__PRETTY_FUNCTION__)[GetPrevious(ptIndex)].GetDistanceRight(particles_old_const(__PRETTY_FUNCTION__)[ptIndex],
+                                                                                                                                          SimulationParameters.SystemSize));
 
 }
 
@@ -218,7 +238,7 @@ double CBaseSimCtrl::GetOrderParameter() const {
 std::vector<double> CBaseSimCtrl::GetParticlesOrientationZ() const {
     std::vector<double> ret;
 
-    for (auto &pt : particles_old) {
+    for (auto &pt : particles_old_const(__PRETTY_FUNCTION__)) {
         ret.push_back(pt.Orientation.Z);
     }
 
@@ -228,7 +248,7 @@ std::vector<double> CBaseSimCtrl::GetParticlesOrientationZ() const {
 std::vector<double> CBaseSimCtrl::GetParticleCoordinatesZ() const {
     std::vector<double> ret;
 
-    for (auto &pt : particles_old) {
+    for (auto &pt : particles_old_const(__PRETTY_FUNCTION__)) {
         ret.push_back(pt.Coordinates);
     }
 
@@ -265,28 +285,45 @@ void CBaseSimCtrl::AccountForBorderAfterMove(CYukawaDipolePt &pt_new) {
 }
 
 void CBaseSimCtrl::SyncBeforeSave() {
-    for (int i = 0; i < ChildProcCount + 1; ++i) {
-        ProcessMapFull.push_back(CDataChunk<CYukawaDipolePt>());
-        ProcessMapFull[i].Init(&particles_old[i * PerProcCount], PerProcCount, i);
+    int currentId = MPI::COMM_WORLD.Get_rank();
+    {
+        printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
     }
-
+    ProcessMapFull = ProcessMap_old;
     SyncToMain();
 }
 
 void CBaseSimCtrl::SyncToMain() {
     int currentId = MPI::COMM_WORLD.Get_rank();
+    {
+        printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+    }
     if (currentId == ManagerProcId) {
         for (int sourceId = 0; sourceId < ChildProcCount; ++sourceId) {
+            printf("Curr id = Manager ONEEEEEEEEEE\n");
             MPI::Status status;
             MPI::COMM_WORLD.Recv(&ProcessMapFull[sourceId], ProcessMapFull[sourceId].size_in_bytes(), MPI::BYTE, sourceId, 0, status);
+            printf("Curr id = Manager TWOOOOOOOOOO\n");
         }
     } else {
+        printf("Curr id = Manager THREEEEEEEEE\n");
         MPI::COMM_WORLD.Send(&ProcessMapFull[currentId], ProcessMapFull[currentId].size_in_bytes(), MPI::BYTE, ManagerProcId, 0);
+        printf("Curr id = Manager FOOOOUUURRR\n");
     }
+
+    {
+        printf ("exit %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+    }
+    std::cout << "save " << &ProcessMapFull[currentId] << " " << &ProcessMap_old[currentId] << " " << &ProcessMap_new[currentId]
+                 << " " << &particles_old(__PRETTY_FUNCTION__)[currentId * PerProcCount] << " " << &particles_new(__PRETTY_FUNCTION__)[currentId * PerProcCount] << "\n";
 }
 
 void CBaseSimCtrl::SyncInCycle() {
     int currentId = MPI::COMM_WORLD.Get_rank();
+    {
+        printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+    }
+//    int currentId = MPI::COMM_WORLD.Get_rank();
     int procCount = MPI::COMM_WORLD.Get_size();
 
     int prevId = currentId - 1;

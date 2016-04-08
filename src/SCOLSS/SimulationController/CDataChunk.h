@@ -12,12 +12,12 @@
 
 template <class DataClass, size_t DataSizeInBytes = sizeof(DataClass)>
 class CDataChunk {
-    DataClass *m_Data;
+    DataClass* m_Data;
     size_t m_size;
 
     bool m_doCleanUp;
-    DataClass*m_linkToNext;
-    DataClass*m_linkToPrev;
+    DataClass* m_linkToNext;
+    DataClass* m_linkToPrev;
 public:
 
     int ProcId;
@@ -65,6 +65,7 @@ public:
     }
 
     DataClass* operator&(){
+        printf("Accessing data in chunk\n");
         return m_Data;
     }
 

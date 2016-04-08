@@ -45,7 +45,7 @@ if (WIN32)
 else()
     if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
         set(CMAKE_CXX_FLAGS_DEBUG
-                "${CMAKE_CXX_FLAGS_DEBUG} -fPIC -pthread -std=c++11") # -Wl,--no-as-needed -Wall -Woverloaded-virtual -Wold-style-cast -Wnon-virtual-dtor")
+                "${CMAKE_CXX_FLAGS_DEBUG} -fPIC -pthread -std=c++11 -finstrument-functions -g") # -Wl,--no-as-needed -Wall -Woverloaded-virtual -Wold-style-cast -Wnon-virtual-dtor")
         set(CMAKE_CXX_FLAGS_RELEASE
                 "${CMAKE_CXX_FLAGS_RELEASE} -fPIC -pthread -std=c++11 -Wl,--no-as-needed -O3 -Wall -Woverloaded-virtual -Wold-style-cast -Wnon-virtual-dtor -g")
     elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")

@@ -26,6 +26,9 @@ int main(int argc, char **argv) {
     std::cout.precision(10);
     std::cout << std::fixed;
     InitializeSimulations(argc, argv);
+
+    std::cout << "exit\n";
+
     MPI::Finalize();
 }
 
@@ -95,7 +98,7 @@ void RunSimulations(std::shared_ptr<CBaseSimCtrl> contr,
 
     InitEpsFile(contr, savePictureFile, pictSaveFileName);
 
-    std::chrono::time_point<std::chrono::system_clock> start_time, step_time;
+    std::chrono::time_point<std::chrono::system_clock> start_time;
     start_time = std::chrono::system_clock::now();
     uint64_t prev_measure = 0;
 
@@ -108,7 +111,6 @@ void RunSimulations(std::shared_ptr<CBaseSimCtrl> contr,
         if (0 == cycle % (contr->SimulationParameters.CyclesBetweenSaves)) {
             SaveDataToFile(contr, fullSaveFileName, miniSaveFileName, simDataFileName, cycle);
         }
-
 
         if (0 == cycle % (totalCycles / contr->SimulationParameters.NumberOfImageLines)) {
             SavePictureEps(contr, savePictureFile);

@@ -165,8 +165,8 @@ class CreateSampleRunFiles:
                           '#$ -m eas\n'
                           '#$ -cwd\n'
                           '#$ -l virtual_free=800M -l h_vmem=800M\n'
-                          '#$ -v LD_LIBRARY_PATH=/usr/lib64/openmpi/bin'
-                          '#$ -v PATH=/usr/local/bin:/bin:/usr/bin:/usr/lib64/openmpi/lib'
+                          '#$ -v LD_LIBRARY_PATH=/usr/lib64/openmpi/bin\n'
+                          '#$ -v PATH=/usr/local/bin:/bin:/usr/bin:/usr/lib64/openmpi/lib\n'
                           '#$ -pe mpi {6}\n'
                           '#$ -q {0}\n'
                           '\n'
@@ -342,15 +342,14 @@ def create_data_saved_files(sim_data, sim_type):
 
 
 def create_data_saved_file(sim_data, sim_type, name_creator, save_file_name):
-    if os.path.exists(save_file_name):
+    while os.path.exists(save_file_name):
         print "Previous saved {1} data exists, download it! \n" \
               " waiting 20 min from {0}".format(datetime.datetime.now().time(), save_file_name.upper())
         time.sleep(20 * 60)
-    else:
-        with open(save_file_name + ".tmp", "w") as data_saved:
-            for name, tar_pattern in iterate_over_folders(sim_data, [name_creator], sim_type):
-                data_saved.write("scp grace:" + os.path.join(os.getcwd(), name) + " " + name + "\n")
-                data_saved.write("tar -xzf " + name + "\n")
-                data_saved.write("rm " + name + "\n")
+    with open(save_file_name + ".tmp", "w") as data_saved:
+        for name, tar_pattern in iterate_over_folders(sim_data, [name_creator], sim_type):
+            data_saved.write("scp grace:" + os.path.join(os.getcwd(), name) + " " + name + "\n")
+            data_saved.write("tar -xzf " + name + "\n")
+            data_saved.write("rm " + name + "\n")
 
-        shutil.move(save_file_name + ".tmp", save_file_name)
+    shutil.move(save_file_name + ".tmp", save_file_name)

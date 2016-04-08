@@ -7,12 +7,12 @@ __author__ = 'mpolovyi'
 simData = {
     "Base": {
         "Density": [0.25, 0.5, 0.75],
-        "InitialConfiguration": [0],
+        "InitialConfiguration": [0, 1],
         "KbT": [1],
         "LoadSavedState": 0,
         "NumberOfSavePoints": 100,
         "NumberOfImageLines": 1,
-        "PtCount": [1600, 3200],
+        "PtCount": [1600, 3200, 6400],
         "SavedParticles": "",
         "SaveParticlesInfo": True,
         "SaveEpsPicture": False

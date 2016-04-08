@@ -31,7 +31,7 @@ void InitializeSimulations(int argc, char **argv) ;
 
 void RunSimulations(std::shared_ptr<CBaseSimCtrl> contr,
                     std::string &fullSaveFileName, std::string &miniSaveFileName, std::string &pictSaveFileName,
-                    std::string &simDataFileName) ;
+                    std::string &simDataFileName);
 
 void InitEpsFile(std::shared_ptr<CBaseSimCtrl> & contr, EPSPlot& savePictureFile, std::string &pictSaveFileName) ;
 

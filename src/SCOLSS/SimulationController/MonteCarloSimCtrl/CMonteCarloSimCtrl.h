@@ -23,8 +23,11 @@ public:
     CMonteCarloSimParams SimulationParameters;
 
     CMonteCarloSimCtrl(CMonteCarloSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
+        int currentId = MPI::COMM_WORLD.Get_rank();
+        {
+            printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+        }
         InitRandomGenerator();
-        int i = 1;
     };
 
     template<class Archive>
@@ -42,14 +45,17 @@ protected:
     double oldParticleCoordinates;
     CQuaternion oldParticleRotation;
 
-    bool AcceptMove(double energy, double oldEnergy);;
+    bool AcceptMove(double energy, double oldEnergy);
 
-    void DoTestMove(size_t ptIndex);;
+    void DoTestMove(size_t ptIndex);
 
-    void DoTestRotation(size_t ptIndex);;
+    void DoTestRotation(size_t ptIndex);
 
     virtual void DoCycle() {
-        Cycles++;
+        int currentId = MPI::COMM_WORLD.Get_rank();
+        {
+            printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+        }
 
         Cycles += 1;
 
@@ -63,6 +69,11 @@ protected:
     };
 
     virtual void InitRandomGenerator() {
+        int currentId = MPI::COMM_WORLD.Get_rank();
+        {
+            printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+        }
+
         CBaseSimCtrl::InitRandomGenerator();
 
         uniformDistributionAcceptance = std::uniform_real_distribution<double>(0, 1);

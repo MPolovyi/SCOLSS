@@ -106,7 +106,6 @@ public:
 
         if (loadSaved == 1) {
             savedStateToLoad.resize(PtCount);
-
             archive.loadBinaryValue(&savedStateToLoad[0], sizeof(CParticleBase) * PtCount, "SavedParticles");
         }
     }

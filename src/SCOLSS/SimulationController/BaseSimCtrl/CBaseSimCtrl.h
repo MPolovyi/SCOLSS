@@ -45,20 +45,20 @@ public:
     std::uniform_real_distribution<double> initialDisplacementDistribution;
 
     template<class Archive>
-    void save(Archive& archive) const {
+    void save(Archive &archive) const {
         archive(cereal::make_nvp("SimulationParameters", SimulationParameters));
         archive(cereal::make_nvp("OrderParameter", GetOrderParameter()));
 
         archive(cereal::make_nvp("PotentialEnergy", GetAveragePotentialEnergy()));
 
-        if(SimulationParameters.SaveParticlesInfo) {
+        if (SimulationParameters.SaveParticlesInfo) {
             std::vector<CParticleBase> pts_save;
             for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
-                pts_save.push_back(particles_old[i]);
+                pts_save.push_back(particles_old_const(__PRETTY_FUNCTION__)[i]);
             }
 
             const CParticleBase *tmp = &pts_save[0];
-            archive.saveBinaryValue(tmp, sizeof(CParticleBase) * particles_old.size(), "Particles");
+            archive.saveBinaryValue(tmp, sizeof(CParticleBase) * particles_old_const(__PRETTY_FUNCTION__).size(), "Particles");
         }
     };
 
@@ -66,6 +66,9 @@ public:
 
     virtual void InitRandomGenerator() {
         int currentId = MPI::COMM_WORLD.Get_rank();
+        {
+            printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+        }
 
         if (currentId == ManagerProcId) {
             initialize_time = std::chrono::system_clock::now();
@@ -97,7 +100,7 @@ public:
     bool PrintTimeExtrapolation(std::chrono::time_point<std::chrono::system_clock> &start_time,
                                 uint64_t &prev_measure, uint64_t totalCycles, uint64_t cycle) const;
 
-    virtual void DoCycle() {};
+    virtual void DoCycle() { };
 
     double GetAveragePotentialEnergy() const;
 
@@ -113,9 +116,41 @@ public:
     int ManagerProcId;
 
 protected:
-    std::vector<CYukawaDipolePt> particles_old;
+    std::vector<CYukawaDipolePt> m_particles_old;
 
-    std::vector<CYukawaDipolePt> particles_new;
+    std::vector<CYukawaDipolePt> &particles_old(const char *called_from) {
+//        int currentId = MPI::COMM_WORLD.Get_rank();
+//        {
+//            printf("entr %s from %s in proc %i\n", __PRETTY_FUNCTION__, called_from, currentId);
+//        }
+        return m_particles_old;
+    };
+
+    const std::vector<CYukawaDipolePt> &particles_old_const(const char *called_from) const {
+//        int currentId = MPI::COMM_WORLD.Get_rank();
+//        {
+//            printf("entr %s from %s in proc %i\n", __PRETTY_FUNCTION__, called_from, currentId);
+//        }
+        return m_particles_old;
+    };
+
+    std::vector<CYukawaDipolePt> m_particles_new;
+
+    std::vector<CYukawaDipolePt> &particles_new(const char *called_from) {
+//        int currentId = MPI::COMM_WORLD.Get_rank();
+//        {
+//            printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+//        }
+        return m_particles_new;
+    };
+
+    const std::vector<CYukawaDipolePt> &particles_new_const() const {
+//        int currentId = MPI::COMM_WORLD.Get_rank();
+//        {
+//            printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
+//        }
+        return m_particles_new;
+    };
 
     std::vector<CDataChunk<CYukawaDipolePt> > ProcessMap_old;
     std::vector<CDataChunk<CYukawaDipolePt> > ProcessMap_new;
