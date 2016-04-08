@@ -43,9 +43,6 @@ public:
 
     void DoCycle() {
         int currentId = MPI::COMM_WORLD.Get_rank();
-        {
-            printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
-        }
         Cycles += 1;
 
 //        int currentId = MPI::COMM_WORLD.Get_rank();
@@ -66,7 +63,7 @@ public:
         }
 
         SyncInCycle();
-        std::swap(particles_old(__PRETTY_FUNCTION__), particles_new(__PRETTY_FUNCTION__));
+        std::swap(particles_old, particles_new);
         std::swap(ProcessMap_old, ProcessMap_new);
 
 //        std::cout << "  " << &ProcessMapFull[currentId] << " " << &ProcessMap_old[currentId] << " " << &ProcessMap_new[currentId]
@@ -112,9 +109,6 @@ protected:
 
     virtual void InitRandomGenerator() {
         int currentId = MPI::COMM_WORLD.Get_rank();
-        {
-            printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
-        }
         CBaseSimCtrl::InitRandomGenerator();
 
         translationNormalDistribution = std::normal_distribution<double>(0, SimulationParameters.DistributionDeviationTranslation);

@@ -65,7 +65,6 @@ public:
     }
 
     DataClass* operator&(){
-        printf("Accessing data in chunk\n");
         return m_Data;
     }
 

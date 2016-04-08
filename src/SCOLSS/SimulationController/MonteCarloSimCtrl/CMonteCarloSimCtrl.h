@@ -24,9 +24,6 @@ public:
 
     CMonteCarloSimCtrl(CMonteCarloSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
         int currentId = MPI::COMM_WORLD.Get_rank();
-        {
-            printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
-        }
         InitRandomGenerator();
     };
 
@@ -53,10 +50,6 @@ protected:
 
     virtual void DoCycle() {
         int currentId = MPI::COMM_WORLD.Get_rank();
-        {
-            printf ("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
-        }
-
         Cycles += 1;
 
         int id = MPI::COMM_WORLD.Get_rank();
@@ -70,9 +63,6 @@ protected:
 
     virtual void InitRandomGenerator() {
         int currentId = MPI::COMM_WORLD.Get_rank();
-        {
-            printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
-        }
 
         CBaseSimCtrl::InitRandomGenerator();
 
