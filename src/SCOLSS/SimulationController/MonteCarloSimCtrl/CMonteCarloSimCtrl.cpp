@@ -16,7 +16,7 @@ bool CMonteCarloSimCtrl::AcceptMove(double energy, double oldEnergy) {
 }
 
 void CMonteCarloSimCtrl::DoTestMove(size_t ptIndex) {
-    auto beforeEnergy = GetParticlePotentialEnergy(GetPrevious(ptIndex));
+    auto beforeEnergy = GetParticlePotentialEnergy(ptIndex);
 
     oldParticleCoordinates = particles_old[ptIndex].Coordinates;
 
@@ -25,7 +25,7 @@ void CMonteCarloSimCtrl::DoTestMove(size_t ptIndex) {
     particles_old[ptIndex].Coordinates += move;
     AccountForBorderAfterMove(particles_old[ptIndex]);
 
-    auto afterEnergy = GetParticlePotentialEnergy(GetPrevious(ptIndex));
+    auto afterEnergy = GetParticlePotentialEnergy(ptIndex);
 
     if (AcceptMove(afterEnergy, beforeEnergy)) {
         return;

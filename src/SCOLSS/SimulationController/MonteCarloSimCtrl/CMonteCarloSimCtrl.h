@@ -28,7 +28,7 @@ public:
     };
 
     template<class Archive>
-    void save(Archive& archive) const {
+    void save(Archive &archive) const {
         archive(cereal::base_class<CBaseSimCtrl>(this));
 
         archive(cereal::make_nvp("SimulationParameters", SimulationParameters));
@@ -49,10 +49,10 @@ protected:
     void DoTestRotation(size_t ptIndex);
 
     virtual void DoCycle() {
-        int currentId = MPI::COMM_WORLD.Get_rank();
         Cycles += 1;
 
         int id = MPI::COMM_WORLD.Get_rank();
+
         for (size_t i = ProcessMapFull[id].beginIndex(); i < ProcessMapFull[id].endIndex(); i++) {
             DoTestMove(i);
             DoTestRotation(i);
