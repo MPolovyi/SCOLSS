@@ -36,13 +36,13 @@ void CMonteCarloSimCtrl::DoTestMove(size_t ptIndex) {
 }
 
 void CMonteCarloSimCtrl::DoTestRotation(size_t ptIndex) {
-    auto beforeEnergy = GetParticlePotentialEnergy(GetPrevious(ptIndex));
+    auto beforeEnergy = GetParticlePotentialEnergy(ptIndex);
 
     oldParticleRotation = particles_old[ptIndex].GetRotation();
 
     particles_old[ptIndex].SetRotation(GetRandomUnitQuaternion());
 
-    auto afterEnergy = GetParticlePotentialEnergy(GetPrevious(ptIndex));
+    auto afterEnergy = GetParticlePotentialEnergy(ptIndex);
 
     if (AcceptMove(afterEnergy, beforeEnergy)) {
         return;
