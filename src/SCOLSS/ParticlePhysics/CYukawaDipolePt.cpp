@@ -22,26 +22,20 @@ double CYukawaDipolePt::GetPotentialEnergy(const CYukawaDipolePt &other, CVector
     return GetYukawaPotentialFromOther1D(other, dr) - Orientation.DotProduct(GetDipoleFieldFromOther1D(other, dr));
 }
 
-double CYukawaDipolePt::GetYukawaPotentialFromOther1D(const CYukawaDipolePt &other, CVector dr_from_other) const {
+double CYukawaDipolePt::GetYukawaPotentialFromOther1D(const CYukawaDipolePt &other, const CVector &dr_from_other) const {
     double dist = std::abs(dr_from_other.Z);
-    auto Yukawa = A * exp(-k * dist) / dist;
-
-    return Yukawa;
+    return A * exp(-k * dist) / dist;
 }
 
 CVector CYukawaDipolePt::GetDipoleFieldFromOther1D(const CYukawaDipolePt &other, CVector dr_from_other) const {
-    double dist = std::abs(dr_from_other.Z);
+    double dist = dr_from_other.Z;
     if (dr_from_other.Z > 0){
-        dr_from_other.Z = 1;
+        dr_from_other.Z = 3 * other.Orientation.Z;
     } else {
-        dr_from_other.Z = -1;
+        dist = -dist;
+        dr_from_other.Z = -3 * other.Orientation.Z;
     }
-
-    CVector other_orientation = other.Orientation;
-
-    auto Dipole = (3 * other_orientation.DotProduct(dr_from_other) * dr_from_other - other_orientation) / (dist * dist * dist);
-
-    return Dipole;
+    return (dr_from_other - other.Orientation) / (dist * dist * dist);
 }
 
 CVector CYukawaDipolePt::GetTorqueFromOther(const CYukawaDipolePt &other_left, const CYukawaDipolePt &other_right) const {

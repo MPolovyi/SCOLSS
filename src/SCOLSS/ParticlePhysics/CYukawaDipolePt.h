@@ -63,7 +63,7 @@ public:
 
     CVector GetDipoleFieldFromOther1D(const CYukawaDipolePt &other, CVector dr_from_other) const;
 
-    double GetYukawaPotentialFromOther1D(const CYukawaDipolePt &other, CVector dr_from_other) const;
+    double GetYukawaPotentialFromOther1D(const CYukawaDipolePt &other, const CVector &dr_from_other) const;
 
     double GetPotentialEnergy(const CYukawaDipolePt &other, CVector dr) const;
 

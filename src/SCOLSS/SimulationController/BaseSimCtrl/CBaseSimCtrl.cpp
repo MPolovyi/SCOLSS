@@ -217,8 +217,8 @@ double CBaseSimCtrl::GetParticlePotentialEnergy_const(size_t ptIndex) const {
 }
 
 double CBaseSimCtrl::GetParticlePotentialEnergy(size_t ptIndex) {
-    auto next = particles_old[GetNext(ptIndex)];
-    auto prev = particles_old[GetPrevious(ptIndex)];
+    auto& next = particles_old[GetNext(ptIndex)];
+    auto& prev = particles_old[GetPrevious(ptIndex)];
 
     if(prev.Moved || next.Moved || particles_old[ptIndex].Moved) {
         particles_old[ptIndex].NewPotentialEnergy =
