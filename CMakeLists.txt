@@ -47,7 +47,7 @@ else()
         set(CMAKE_CXX_FLAGS_DEBUG
                 "${CMAKE_CXX_FLAGS_DEBUG} -fPIC -pthread -std=c++11 -finstrument-functions -g") # -Wl,--no-as-needed -Wall -Woverloaded-virtual -Wold-style-cast -Wnon-virtual-dtor")
         set(CMAKE_CXX_FLAGS_RELEASE
-                "${CMAKE_CXX_FLAGS_RELEASE} -fPIC -pthread -std=c++11 -Wl,--no-as-needed -O3 -Wall -Woverloaded-virtual -Wold-style-cast -Wnon-virtual-dtor -g")
+                "${CMAKE_CXX_FLAGS_RELEASE} -fPIC -pthread -std=c++11 -Wl,--no-as-needed -O3")
     elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
         set(CMAKE_CXX_FLAGS_DEBUG
                 "${CMAKE_CXX_FLAGS_DEBUG} -fPIC -pthread -std=c++11 -nostdinc++ -isystem /usr/include/c++/4.8 -isystem /usr/include/x86_64-linux-gnu/c++/4.8 -Wall -Woverloaded-virtual") # -Wold-style-cast -Wnon-virtual-dtor")

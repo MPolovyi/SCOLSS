@@ -4,6 +4,7 @@
 
 #include "CMonteCarloSimCtrl.h"
 
+
 bool CMonteCarloSimCtrl::AcceptMove(double energy, double oldEnergy) {
     bool ret = energy <= oldEnergy;
 
