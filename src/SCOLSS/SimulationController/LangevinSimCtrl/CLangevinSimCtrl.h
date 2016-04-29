@@ -34,10 +34,6 @@ public:
     }
 
     CLangevinSimCtrl(CLangevinSimParams d) : CBaseSimCtrl(d), SimulationParameters(d) {
-        int currentId = MPI::COMM_WORLD.Get_rank();
-        {
-            printf("entr %s in proc %i\n", __PRETTY_FUNCTION__, currentId);
-        }
         InitRandomGenerator();
     }
 

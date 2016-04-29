@@ -83,6 +83,8 @@ void InitializeSimulations(int argc, char **argv) {
         SaveDataToFile(sim, fullSaveFileName, miniSaveFileName, simDataFileName, 0);
 
         RunSimulations(sim, fullSaveFileName, miniSaveFileName, pictSaveFileName, simDataFileName);
+
+        printf("Sample N %i\n", i);
     }
 
     if (id == p-1) {

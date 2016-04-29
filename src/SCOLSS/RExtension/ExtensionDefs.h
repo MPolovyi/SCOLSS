@@ -17,14 +17,8 @@ constexpr double GetInertia() {
 
 int get_nearest_index(double* arr, double val, int size);
 
-extern "C" void Function_GetCorrelations(char ** input_string,
-                                         int*_ptCount,
-                                         int* _corrCount,
-                                         double* _maxCorrLength,
-                                         double* correlations_out,
-                                         int* corr_counts_out,
-                                         double* corr_lengths_out,
-                                         double* _systemSize);
+extern "C" void Function_GetCorrelations(double *correlations_out, int *corr_counts_out, double *corr_lengths_out, char **input_string, int *_ptCount, int *_corrCount,
+                                         double *_systemSize);
 
 extern "C" void Function_GetChainOrientationProbabilityCorrelation(char ** input_string,
                                                                    int*_ptCount,
@@ -51,7 +45,8 @@ extern "C" void Function_GetChainOrientationProbabilityAngle(int*breaks_counts,
                                                              int*chain_counts,
                                                              char ** input_string,
                                                              int*_ptCount,
-                                                             double*  _angleCutOff, double* _distanceCutOff);
+                                                             double*  _angleCutOff,
+                                                             double* _distanceCutOff);
 
 extern "C" void Function_GetDynamicChains(double *neigh_c,
                                           double *coords_first,

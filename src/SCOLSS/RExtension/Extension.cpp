@@ -49,32 +49,19 @@ int get_nearest_index(double* arr, double val, int size){
     return ret;
 }
 
-extern "C" void Function_GetCorrelations(char ** input_string,
-                                         int*_ptCount,
-                                         int* _corrCount,
-                                         double* _maxCorrLength,
-                                         double* correlations_out,
-                                         int* corr_counts_out,
-                                         double* corr_lengths_out,
-                                         double* _systemSize) {
-    int ptCount = _ptCount[0];
-    double& maxCorrLength = _maxCorrLength[0];
-    int& corrCount = _corrCount[0];
-    double& systemSize = _systemSize[0];
+extern "C" void Function_GetCorrelations(double *correlations_out,
+                                         int *corr_counts_out,
+                                         double *corr_lengths_out,
+                                         char **input_string,
+                                         int *_ptCount,
+                                         int *_corrCount,
+                                         double *_systemSize) {
+    const int& ptCount = *_ptCount;
+    const int& corrCount = *_corrCount;
+    const double& maxCorrLength = corr_lengths_out[corrCount-1];
+    const double& systemSize = *_systemSize;
 
-    std::string input(*input_string);
-    std::stringstream in_stream;
-
-    in_stream << "{\"value0\": \"";
-    in_stream << input;
-    in_stream << "\"}";
-    cereal::JSONInputArchive arch(in_stream);
-    std::vector<CParticleBase> particles;
-
-    for (int i = 0; i < ptCount; ++i) {
-        particles.push_back(CParticleBase());
-    }
-    arch.loadBinaryValue(&particles[0], sizeof(CParticleBase) * ptCount);
+    std::vector<CParticleBase> particles = LoadParticles(*input_string, ptCount);
 
     double dist = 0;
     for (int i = 0; i < ptCount; i++) {
