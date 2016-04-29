@@ -24,14 +24,17 @@ void CMonteCarloSimCtrl::DoTestMove(size_t ptIndex) {
 
     particles_old[ptIndex].Coordinates += move;
     AccountForBorderAfterMove(particles_old[ptIndex]);
+    particles_old[ptIndex].Moved = true;
 
     auto afterEnergy = GetParticlePotentialEnergy(ptIndex);
 
     if (AcceptMove(afterEnergy, beforeEnergy)) {
+        particles_old[ptIndex].PotentialEnergy = particles_old[ptIndex].NewPotentialEnergy;
         return;
     }
     else {
         particles_old[ptIndex].Coordinates = oldParticleCoordinates;
+        particles_old[ptIndex].Moved = false;
     }
 }
 
@@ -41,14 +44,17 @@ void CMonteCarloSimCtrl::DoTestRotation(size_t ptIndex) {
     oldParticleRotation = particles_old[ptIndex].GetRotation();
 
     particles_old[ptIndex].SetRotation(GetRandomUnitQuaternion());
+    particles_old[ptIndex].Moved = true;
 
     auto afterEnergy = GetParticlePotentialEnergy(ptIndex);
 
     if (AcceptMove(afterEnergy, beforeEnergy)) {
+        particles_old[ptIndex].PotentialEnergy = particles_old[ptIndex].NewPotentialEnergy;
         return;
     }
     else {
         particles_old[ptIndex].SetRotation(oldParticleRotation);
+        particles_old[ptIndex].Moved = false;
     }
 }
 

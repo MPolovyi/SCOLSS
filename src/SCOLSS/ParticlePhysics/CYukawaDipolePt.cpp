@@ -3,6 +3,7 @@
 //
 
 #include "CYukawaDipolePt.h"
+#include <cmath>
 
 CVector CYukawaDipolePt::GetRotationDistance(const CYukawaDipolePt &now, const CYukawaDipolePt &before) {
     CQuaternion spanned_distance = now.Rotation * before.Rotation.GetInverse();
@@ -18,19 +19,23 @@ double CYukawaDipolePt::GetPotentialEnergy(const CYukawaDipolePt &other, CVector
     //Yukawa field is directed along the dr vector. But since it's one dimensional case, let's leave it as it is.
     //for 3D case replace .Z with Length()??
 
-    return GetYukawaPotentialFromOther(other, dr) - Orientation.DotProduct(GetDipoleFieldFromOther(other, dr));
+    return GetYukawaPotentialFromOther1D(other, dr) - Orientation.DotProduct(GetDipoleFieldFromOther1D(other, dr));
 }
 
-double CYukawaDipolePt::GetYukawaPotentialFromOther(const CYukawaDipolePt &other, CVector dr_from_other) const {
-    double dist = dr_from_other.GetLength();
+double CYukawaDipolePt::GetYukawaPotentialFromOther1D(const CYukawaDipolePt &other, CVector dr_from_other) const {
+    double dist = std::abs(dr_from_other.Z);
     auto Yukawa = A * exp(-k * dist) / dist;
 
     return Yukawa;
 }
 
-CVector CYukawaDipolePt::GetDipoleFieldFromOther(const CYukawaDipolePt &other, CVector dr_from_other) const {
-    double dist = dr_from_other.GetLength();
-    dr_from_other.Normalize();
+CVector CYukawaDipolePt::GetDipoleFieldFromOther1D(const CYukawaDipolePt &other, CVector dr_from_other) const {
+    double dist = std::abs(dr_from_other.Z);
+    if (dr_from_other.Z > 0){
+        dr_from_other.Z = 1;
+    } else {
+        dr_from_other.Z = -1;
+    }
 
     CVector other_orientation = other.Orientation;
 
@@ -45,20 +50,19 @@ CVector CYukawaDipolePt::GetTorqueFromOther(const CYukawaDipolePt &other_left, c
 }
 
 CVector CYukawaDipolePt::GetTorqueFromOther(const CYukawaDipolePt &other, CVector dr_from_other) const {
-    return Orientation.CrossProduct(GetDipoleFieldFromOther(other, dr_from_other));
+    return Orientation.CrossProduct(GetDipoleFieldFromOther1D(other, dr_from_other));
 }
 
 double CYukawaDipolePt::GetForceFromOther(const CYukawaDipolePt &other_left, const CYukawaDipolePt &other_right) const {
-    return GetForceFromOtherTheoretically(other_left, other_left.GetDistanceRight(*this, SystemSize))
-           + GetForceFromOtherTheoretically(other_right, other_right.GetDistanceLeft(*this, SystemSize));
+    return GetForceFromOtherTheoretically1D(other_left, other_left.GetDistanceRight(*this, SystemSize))
+           + GetForceFromOtherTheoretically1D(other_right, other_right.GetDistanceLeft(*this, SystemSize));
 }
 
-double CYukawaDipolePt::GetForceFromOtherTheoretically(const CYukawaDipolePt &other, CVector dr_from_other) const {
+double CYukawaDipolePt::GetForceFromOtherTheoretically1D(const CYukawaDipolePt &other, CVector dr_from_other) const {
     CVector orientation = Orientation;
     CVector other_orientation = other.Orientation;
 
     double dist = dr_from_other.GetLength();
-
     dr_from_other.Normalize();
 
     auto D = (3 * orientation.DotProduct(dr_from_other) * other_orientation.DotProduct(dr_from_other)

@@ -29,6 +29,10 @@ public:
         Coordinates = 0;
         ForceRandom = 0;
         ForceOld = 0;
+
+        Moved = true;
+        PotentialEnergy = 99999;
+        NewPotentialEnergy = 99999;
     }
 
     void SetRotation(CQuaternion nRotation) {
@@ -49,7 +53,7 @@ public:
 
     CQuaternion GetRotationFromVelocity(std::vector<CVector> angVelocity, double dt);
 
-    double GetForceFromOtherTheoretically(const CYukawaDipolePt &other, CVector dr_from_other) const;
+    double GetForceFromOtherTheoretically1D(const CYukawaDipolePt &other, CVector dr_from_other) const;
 
     double GetForceFromOther(const CYukawaDipolePt &other_left, const CYukawaDipolePt &other_right) const;
 
@@ -57,9 +61,9 @@ public:
 
     CVector GetTorqueFromOther(const CYukawaDipolePt &other_left, const CYukawaDipolePt &other_right) const;
 
-    CVector GetDipoleFieldFromOther(const CYukawaDipolePt &other, CVector dr_from_other) const;
+    CVector GetDipoleFieldFromOther1D(const CYukawaDipolePt &other, CVector dr_from_other) const;
 
-    double GetYukawaPotentialFromOther(const CYukawaDipolePt &other, CVector dr_from_other) const;
+    double GetYukawaPotentialFromOther1D(const CYukawaDipolePt &other, CVector dr_from_other) const;
 
     double GetPotentialEnergy(const CYukawaDipolePt &other, CVector dr) const;
 
@@ -68,6 +72,10 @@ public:
     static CVector GetRotationDistance(const CYukawaDipolePt &now, const CYukawaDipolePt &before);
 
     CVector AngularDisplacement;
+
+    bool Moved;
+    double PotentialEnergy;
+    double NewPotentialEnergy;
 };
 
 

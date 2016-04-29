@@ -125,7 +125,8 @@ protected:
 
     size_t PerProcCount;
 
-    double GetParticlePotentialEnergy(size_t ptIndex) const;
+    double GetParticlePotentialEnergy_const(size_t ptIndex) const;
+    double GetParticlePotentialEnergy(size_t ptIndex);
 
     double GetOrderParameter() const;
 

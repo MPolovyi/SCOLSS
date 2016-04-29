@@ -148,7 +148,7 @@ double CBaseSimCtrl::GetAveragePotentialEnergy() const {
     for (size_t i = 0; i < SimulationParameters.PtCount; i++) {
         auto &pt = particles_old[i];
 
-        ret += GetParticlePotentialEnergy(i);
+        ret += GetParticlePotentialEnergy_const(i);
     }
 
     return ret / 2.0 / SimulationParameters.PtCount;
@@ -206,7 +206,7 @@ CQuaternion CBaseSimCtrl::GetRandomUnitQuaternion() {
     return ret;
 }
 
-double CBaseSimCtrl::GetParticlePotentialEnergy(size_t ptIndex) const {
+double CBaseSimCtrl::GetParticlePotentialEnergy_const(size_t ptIndex) const {
     return particles_old[ptIndex].GetPotentialEnergy(particles_old[GetNext(ptIndex)],
                                                                     particles_old[GetNext(ptIndex)].GetDistanceLeft(particles_old[ptIndex],
                                                                                                                                    SimulationParameters.SystemSize))
@@ -214,6 +214,21 @@ double CBaseSimCtrl::GetParticlePotentialEnergy(size_t ptIndex) const {
                                                                       particles_old[GetPrevious(ptIndex)].GetDistanceRight(particles_old[ptIndex],
                                                                                                                                           SimulationParameters.SystemSize));
 
+}
+
+double CBaseSimCtrl::GetParticlePotentialEnergy(size_t ptIndex) {
+    auto next = particles_old[GetNext(ptIndex)];
+    auto prev = particles_old[GetPrevious(ptIndex)];
+
+    if(prev.Moved || next.Moved || particles_old[ptIndex].Moved) {
+        particles_old[ptIndex].NewPotentialEnergy =
+                particles_old[ptIndex].GetPotentialEnergy(next, next.GetDistanceLeft(particles_old[ptIndex], SimulationParameters.SystemSize))
+                + particles_old[ptIndex].GetPotentialEnergy(prev, prev.GetDistanceRight(particles_old[ptIndex], SimulationParameters.SystemSize));
+
+        return particles_old[ptIndex].NewPotentialEnergy;
+    } else {
+        return particles_old[ptIndex].PotentialEnergy;
+    }
 }
 
 double CBaseSimCtrl::GetOrderParameter() const {
