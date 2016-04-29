@@ -207,12 +207,12 @@ CQuaternion CBaseSimCtrl::GetRandomUnitQuaternion() {
 }
 
 double CBaseSimCtrl::GetParticlePotentialEnergy_const(size_t ptIndex) const {
-    return particles_old[ptIndex].GetPotentialEnergy(particles_old[GetNext(ptIndex)],
-                                                                    particles_old[GetNext(ptIndex)].GetDistanceLeft(particles_old[ptIndex],
-                                                                                                                                   SimulationParameters.SystemSize))
-           + particles_old[ptIndex].GetPotentialEnergy(particles_old[GetPrevious(ptIndex)],
-                                                                      particles_old[GetPrevious(ptIndex)].GetDistanceRight(particles_old[ptIndex],
-                                                                                                                                          SimulationParameters.SystemSize));
+    return particles_old[ptIndex].GetPotentialEnergy1D(particles_old[GetNext(ptIndex)],
+                                                       particles_old[GetNext(ptIndex)].GetDistanceLeft(particles_old[ptIndex],
+                                                                                                       SimulationParameters.SystemSize))
+           + particles_old[ptIndex].GetPotentialEnergy1D(particles_old[GetPrevious(ptIndex)],
+                                                         particles_old[GetPrevious(ptIndex)].GetDistanceRight(particles_old[ptIndex],
+                                                                                                              SimulationParameters.SystemSize));
 
 }
 
@@ -222,8 +222,8 @@ double CBaseSimCtrl::GetParticlePotentialEnergy(size_t ptIndex) {
 
     if(prev.Moved || next.Moved || particles_old[ptIndex].Moved) {
         particles_old[ptIndex].NewPotentialEnergy =
-                particles_old[ptIndex].GetPotentialEnergy(next, next.GetDistanceLeft(particles_old[ptIndex], SimulationParameters.SystemSize))
-                + particles_old[ptIndex].GetPotentialEnergy(prev, prev.GetDistanceRight(particles_old[ptIndex], SimulationParameters.SystemSize));
+                particles_old[ptIndex].GetPotentialEnergy1D(next, next.GetDistanceLeft(particles_old[ptIndex], SimulationParameters.SystemSize))
+                + particles_old[ptIndex].GetPotentialEnergy1D(prev, prev.GetDistanceRight(particles_old[ptIndex], SimulationParameters.SystemSize));
 
         return particles_old[ptIndex].NewPotentialEnergy;
     } else {

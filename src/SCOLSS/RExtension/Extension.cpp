@@ -230,7 +230,7 @@ extern "C" void Function_GetChainOrientationProbabilityEnergy(char ** input_stri
         pt1.Coordinates = pt.Coordinates;
         pt2.Coordinates = pt_next.Coordinates;
 
-        double energy = pt1.GetPotentialEnergy(pt2, pt1.GetDistanceRight(pt2, systemSize));
+        double energy = pt1.GetPotentialEnergy1D(pt2, pt1.GetDistanceRight(pt2, systemSize));
 
         if(energy < separationCutOff) {
             chainLength++;
@@ -466,25 +466,25 @@ extern "C" void Function_GetChainOrientationProbability(char ** input_string,
                 corr_counts_out[0]++;
                 corr_lengths_out[0] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
 
-                corr_lengths_out[4] += pt1.GetPotentialEnergy(pt2, pt1.GetDistanceRight(pt2, systemSize));
+                corr_lengths_out[4] += pt1.GetPotentialEnergy1D(pt2, pt1.GetDistanceRight(pt2, systemSize));
             }
             if (!chain_1 && chain_2) {
                 corr_counts_out[1]++;
                 corr_lengths_out[1] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
 
-                corr_lengths_out[5] += pt1.GetPotentialEnergy(pt2, pt1.GetDistanceRight(pt2, systemSize));
+                corr_lengths_out[5] += pt1.GetPotentialEnergy1D(pt2, pt1.GetDistanceRight(pt2, systemSize));
             }
             if (chain_1 && !chain_2) {
                 corr_counts_out[2]++;
                 corr_lengths_out[2] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
 
-                corr_lengths_out[6] += pt1.GetPotentialEnergy(pt2, pt1.GetDistanceRight(pt2, systemSize));
+                corr_lengths_out[6] += pt1.GetPotentialEnergy1D(pt2, pt1.GetDistanceRight(pt2, systemSize));
             }
             if (!chain_1 && !chain_2) {
                 corr_counts_out[3]++;
                 corr_lengths_out[3] += pt.GetDistanceRight(pt_next, systemSize).GetLength();
 
-                corr_lengths_out[7] += pt1.GetPotentialEnergy(pt2, pt1.GetDistanceRight(pt2, systemSize));
+                corr_lengths_out[7] += pt1.GetPotentialEnergy1D(pt2, pt1.GetDistanceRight(pt2, systemSize));
             }
 
             if (chain_1) {
