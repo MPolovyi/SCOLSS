@@ -44,7 +44,9 @@ void CMonteCarloSimCtrl::DoTestRotation(size_t ptIndex) {
 
     oldParticleRotation = particles_old[ptIndex].GetRotation();
 
-    particles_old[ptIndex].SetRotation(GetRandomUnitQuaternion());
+    std::vector<CVector> rv = {GetNormalRandomVector(normalDistributionRotation)};
+
+    particles_old[ptIndex].SetRotation(particles_old[ptIndex].GetRotationFromVelocity(rv, 1));
     particles_old[ptIndex].Moved = true;
 
     auto afterEnergy = GetParticlePotentialEnergy(ptIndex);

@@ -101,8 +101,6 @@ protected:
 
     double GetAverAngularDisplZ() const;
 
-    CVector GetNormalRandomVector(std::normal_distribution<double> &normalDistribution);
-
     virtual void InitRandomGenerator() {
         int currentId = MPI::COMM_WORLD.Get_rank();
         CBaseSimCtrl::InitRandomGenerator();

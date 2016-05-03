@@ -190,10 +190,6 @@ double CLangevinSimCtrl::GetAverAngularDisplZ() const {
     return ret / SimulationParameters.PtCount;
 }
 
-CVector CLangevinSimCtrl::GetNormalRandomVector(std::normal_distribution<double> &normalDistribution) {
-    return CVector(normalDistribution(rnd_gen), normalDistribution(rnd_gen), normalDistribution(rnd_gen));
-}
-
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/json.hpp>
 

@@ -161,6 +161,8 @@ protected:
     void SyncToMain();
 
     void SyncInCycle();
+
+    CVector GetNormalRandomVector(std::normal_distribution<double> &normalDistribution);
 };
 
 

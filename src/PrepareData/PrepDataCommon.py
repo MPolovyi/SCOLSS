@@ -204,7 +204,7 @@ class CreateSampleRunFiles:
                           'fi\n'
                           '\n'
                           'if {5}; then\n'
-                          '  limited_copy PicsData_Data_{1}.json.tar $SGE_O_WORKDIR 5m\n'
+                          '  limited_copy PictData_Data_{1}.json.tar $SGE_O_WORKDIR 5m\n'
                           'fi\n'
                           '\n'
                           'rm -r *\n'
@@ -264,7 +264,7 @@ def create_task_to_archive_results_from_folder_md(*args):
         tar_save_lines += ' tar -czpf ' + sim_type + '_Full_{0}.tar.gz ./{0}/FullData*.tar\n'
 
     if sim_data["Base"]["SaveEpsPicture"]:
-        tar_save_lines += ' tar -cpf ' + sim_type + '_Pics_{0}.tar.gz ./{0}/PicsData*.tar\n'
+        tar_save_lines += ' tar -cpf ' + sim_type + '_Pict_{0}.tar.gz ./{0}/PictData*.tar\n'
 
     run_file_lines = ('\n'
                       '#$ -S /bin/sh\n'
@@ -328,7 +328,7 @@ def create_full_tar_names(*args):
 
 def create_pics_tar_names(*args):
     folder_name = args[0]
-    return "{0}_Pics_{1}.tar.gz".format(args[2], folder_name), "./{0}/Pics*".format(folder_name)
+    return "{0}_Pict_{1}.tar.gz".format(args[2], folder_name), "./{0}/Pict*".format(folder_name)
 
 
 def create_data_saved_files(sim_data, sim_type):

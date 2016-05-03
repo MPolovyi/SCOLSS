@@ -37,6 +37,7 @@ public:
 
     std::uniform_real_distribution<double> uniformDistributionAcceptance;
     std::uniform_real_distribution<double> uniformDistributionMove;
+    std::normal_distribution<double> normalDistributionRotation;
 
 protected:
     double oldParticleCoordinates;
@@ -71,6 +72,7 @@ protected:
         uniformDistributionMove = std::uniform_real_distribution<double>(-SimulationParameters.MaxTestDisplacement / 2,
                                                                          SimulationParameters.MaxTestDisplacement / 2);
 
+        normalDistributionRotation = std::normal_distribution<double>(0, 1);
     };
 };
 

@@ -338,3 +338,7 @@ void CBaseSimCtrl::SyncInCycle() {
     MPI::COMM_WORLD.Recv(ProcessMap_new[currentId].linkToPrev(), ProcessMap_new[currentId].size_of_data(), MPI::BYTE, prevId, 0, status);
     MPI::COMM_WORLD.Recv(ProcessMap_new[currentId].linkToNext(), ProcessMap_new[currentId].size_of_data(), MPI::BYTE, nexId, 0, status);
 }
+
+CVector CBaseSimCtrl::GetNormalRandomVector(std::normal_distribution<double> &normalDistribution) {
+    return CVector(normalDistribution(rnd_gen), normalDistribution(rnd_gen), normalDistribution(rnd_gen));
+}
