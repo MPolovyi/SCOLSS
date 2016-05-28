@@ -15,8 +15,6 @@
 #include <SCOLSS/SimulationController/LangevinSimCtrl/CLangevinSimParams.h>
 #include <SCOLSS/SimulationController/LangevinSimCtrl/CLangevinSimCtrl.h>
 
-#include <SCOLSS/ParticlePhysics/CYukawaDipolePt.h>
-
 #include <SCOLSS/ExecFile/CTarball.h>
 
 #include <SCOLSS/ExecFile/main.h>

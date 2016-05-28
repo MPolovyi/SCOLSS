@@ -311,7 +311,8 @@ extern "C" void Function_GetChainOrientationProbabilityAngle(int*breaks_counts,
                                                              int*chain_counts,
                                                              char ** input_string,
                                                              int*_ptCount,
-                                                             double*  _angleCutOff, double* _distanceCutOff) {
+                                                             double*  _angleCutOff,
+                                                             double* _distanceCutOff) {
 
     int ptCount = _ptCount[0];
     double angleCutOff = _angleCutOff[0];
@@ -324,7 +325,6 @@ extern "C" void Function_GetChainOrientationProbabilityAngle(int*breaks_counts,
     for (int i = 0; i < particles.size(); i++) {
         auto cosThis = particles[i].GetOrientation().Z;
         auto cosNext = particles[get_next(i, ptCount)].GetOrientation().Z;
-
 
         if ((MapOrientation(cosThis, cosNext, angleCutOff) == 0 || MapOrientation(cosThis, cosNext, angleCutOff) == 4)
             && particles[i].GetDistanceRight(particles[get_next(i, ptCount)], 10000).GetLength() < distanceCutOff) {
