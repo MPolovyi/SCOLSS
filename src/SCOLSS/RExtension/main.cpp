@@ -99,59 +99,99 @@ public:
     }
 };
 
-int main() {
-    void* handle = dlopen("../build/lib/libRExtensionLibrary.so", RTLD_NOW);
-//    void *handle = dlopen("libRExtensionLibrary.so", RTLD_NOW);
 
+class saver_2 {
+public:
+    saver_2(simParams _params, double autocor, double _simTime):
+    simP(_params), Autocorrelation(autocor),  simTime(_simTime) {
+    }
+
+    simParams simP;
+    double Autocorrelation;
+    calc_params CalcParams;
+    double simTime;
+
+    template <class archive>
+    void serialize(archive& arch) {
+        arch(cereal::make_nvp("SimulationParameters", simP));
+        arch(cereal::make_nvp("CalcParameters", CalcParams));
+        arch(cereal::make_nvp("Autocorrelation", Autocorrelation));
+        arch(cereal::make_nvp("SimulationTime", simTime));
+    }
+};
+
+
+std::string loadParticles(std::string fname, simParams* p) {
     double tmp_double;
     long tmp_int;
     std::string tmp_string;
 
+    std::fstream saved_data(fname);
+    cereal::JSONInputArchive iarch(saved_data);
+    simParams params;
+
+    iarch.startNode();
+    iarch.loadValue(tmp_int);
+    iarch.loadValue(tmp_string);
+    iarch.startNode();
+    iarch.loadValue(tmp_int);
+    iarch.startNode();
+    iarch.startNode();
+    iarch(params);
+    iarch.loadValue(tmp_double);
+    iarch.loadValue(tmp_double);
+
+    std::string particles;
+    iarch.loadValue(particles);
+
+    *p = params;
+    return particles;
+}
+
+int main() {
+    void* handle = dlopen("../build/lib/libRExtensionLibrary.so", RTLD_NOW);
+//    void *handle = dlopen("libRExtensionLibrary.so", RTLD_NOW);
+
     for (int i = 0; i < 10000; i += 20) {
         simParams p;
 
-        int breaks_count[10];
+        double corrs[500];
         int chain_counts[10];
-        for (int j = 0; j < 10; ++j) {
-            breaks_count[j] = 0;
-            chain_counts[j] = 0;
+        for (int j = 0; j < 500; ++j) {
+            corrs[j] = 0;
         }
 
         for (int sample = 1; sample <= 500; ++sample) {
-            std::fstream saved_data("FullData_" + std::to_string(sample) + "_Data_0.json" + std::to_string(i));
-
-            cereal::JSONInputArchive iarch(saved_data);
-
-            iarch.startNode();
-            iarch.loadValue(tmp_int);
-            iarch.loadValue(tmp_string);
-            iarch.startNode();
-            iarch.loadValue(tmp_int);
-            iarch.startNode();
-            iarch.startNode();
-            iarch(p);
-            iarch.loadValue(tmp_double);
-            iarch.loadValue(tmp_double);
-
-            std::string particles;
-            iarch.loadValue(particles);
+            auto particles_0 = loadParticles("FullData_" + std::to_string(sample) + "_Data_0.json0", &p);
+            auto particles = loadParticles("FullData_" + std::to_string(sample) + "_Data_0.json" + std::to_string(i), &p);
             double cut_off = 0.1;
             double angle_cut_off = std::cos(M_PI/3.0);
 
             char *encoded = &particles[0];
+            char *encoded_0 = &particles_0[0];
 
-            Function_GetChainOrientationProbabilityAngle(breaks_count, chain_counts, &encoded, &p.ptCount, &angle_cut_off, &cut_off);
+            int sample_index = sample-1;
+            Function_AutoCorrelation(corrs, &sample_index, &encoded_0, &encoded, &p.ptCount);
+
         }
 
-        std::fstream calculated_file("Probs_data" + std::to_string(i), std::ios::out);
+        double res = 0;
+        for (int k = 0; k < 500; k++){
+            res += corrs[k];
+        }
+
+        std::fstream calculated_file("Autocor_data" + std::to_string(i), std::ios::out);
         {
-            saver to_save(p, breaks_count, i/100.0);
+            saver_2 to_save(p, res/500.0, i/100.0);
 
             cereal::JSONOutputArchive calc_data(calculated_file);
 
             calc_data(to_save);
         }
         calculated_file.close();
+
+
+        break;
     }
 
 //    int ptCount = 1600;
