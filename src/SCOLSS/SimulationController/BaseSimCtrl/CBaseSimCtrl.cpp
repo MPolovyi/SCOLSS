@@ -18,6 +18,7 @@ CBaseSimCtrl::CBaseSimCtrl(CBaseSimParams d) : SimulationParameters(d) {
         auto pt = getPt(i);
         particles_new.push_back(pt);
         particles_old.push_back(pt);
+        particles_init.push_back(pt);
     }
 
     PerProcCount = SimulationParameters.PtCount / ProcCount;

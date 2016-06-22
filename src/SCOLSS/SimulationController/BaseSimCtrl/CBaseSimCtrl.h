@@ -17,7 +17,7 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/json.hpp>
-
+#include <cereal/types/tuple.hpp>
 
 #include <SCOLSS/EPSPlot/EPSPlot.h>
 
@@ -27,8 +27,121 @@
 #include <SCOLSS/SimulationController/BaseSimCtrl/CBaseSimParams.h>
 
 #include <SCOLSS/SimulationController/CDataChunk.h>
+#include <SCOLSS/RExtension/ExtensionDefs.h>
+
 
 class CBaseSimCtrl {
+private:
+    class breaks{
+    public:
+        breaks(int* _breaks) {
+            double summ = 0;
+
+            for (int i = 0; i < 9; ++i) {
+                summ += _breaks[i];
+            }
+            for (int j = 0; j < 9; ++j) {
+                probs[j] = _breaks[j]/summ;
+            }
+        }
+        double probs[10];
+
+        template <class archive>
+        void serialize(archive& arch) {
+            arch(cereal::make_nvp("LL", probs[0]));
+            arch(cereal::make_nvp("LR", probs[1]));
+            arch(cereal::make_nvp("LU", probs[2]));
+            arch(cereal::make_nvp("RL", probs[3]));
+            arch(cereal::make_nvp("RR", probs[4]));
+            arch(cereal::make_nvp("RU", probs[5]));
+            arch(cereal::make_nvp("UL", probs[6]));
+            arch(cereal::make_nvp("UR", probs[7]));
+            arch(cereal::make_nvp("UU", probs[8]));
+        }
+    };
+
+    class calc_params{
+    private:
+        std::string AngleCut;
+        std::string DistCut;
+
+    public:
+        calc_params(std::string angle_cut, std::string dist_cut) : AngleCut(angle_cut), DistCut(dist_cut) {}
+
+        template <class archive>
+        void serialize(archive& arch) {
+            std::string a = "Function_GetChainOrientationProbabilityAngle";
+            arch(cereal::make_nvp("Function", a));
+            arch(cereal::make_nvp("AngleCut", AngleCut));
+            arch(cereal::make_nvp("DistCut", DistCut));
+        }
+    };
+
+    double AutoCorrelation_CPP(std::vector<CParticleBase> zero_config,
+                               std::vector<CParticleBase> current_config) const {
+        double corr = 0;
+
+        for (int i = 0; i < zero_config.size(); ++i) {
+            corr += zero_config[i].GetOrientation().DotProduct(current_config[i].GetOrientation());
+        }
+
+        return corr;
+    }
+
+    bool IsLeft(double cosAngle, double cutOff) const {
+        return cosAngle < -cutOff;
+    }
+    bool IsRight(double cosAngle, double cutOff) const {
+        return cosAngle > cutOff;
+    }
+    bool IsUndefined(double cosAngle, double cutOff) const {
+        return cosAngle < cutOff && cosAngle > -cutOff;
+    };
+
+    int MapOrientation(double cosThis, double cosNext, double cutOff) const {
+        if(IsLeft(cosThis, cutOff) && IsLeft(cosNext, cutOff)){ return 0; }
+        if(IsLeft(cosThis, cutOff) && IsRight(cosNext, cutOff)){ return 1; }
+        if(IsLeft(cosThis, cutOff) && IsUndefined(cosNext, cutOff)){ return 2; }
+
+        if(IsRight(cosThis, cutOff) && IsLeft(cosNext, cutOff)){ return 3; }
+        if(IsRight(cosThis, cutOff) && IsRight(cosNext, cutOff)){ return 4; }
+        if(IsRight(cosThis, cutOff) && IsUndefined(cosNext, cutOff)){ return 5; }
+
+        if(IsUndefined(cosThis, cutOff) && IsLeft(cosNext, cutOff)){ return 6; }
+        if(IsUndefined(cosThis, cutOff) && IsRight(cosNext, cutOff)){ return 7; }
+        if(IsUndefined(cosThis, cutOff) && IsUndefined(cosNext, cutOff)){ return 8; }
+
+        return 999;
+    }
+
+    std::tuple<calc_params, breaks> GetChainOrientationProbabilityAngle_CPP(std::vector<CParticleBase> particles,
+                                                                            double angleCutOff,
+                                                                            double distanceCutOff) const {
+
+        int ptCount = (int) particles.size();
+
+        int breaks_counts[10];
+
+        int chainLength = 0;
+
+        for (int i = 0; i < particles.size(); i++) {
+            auto cosThis = particles[i].GetOrientation().Z;
+            auto cosNext = particles[GetNext(i)].GetOrientation().Z;
+
+            if ((MapOrientation(cosThis, cosNext, angleCutOff) == 0 || MapOrientation(cosThis, cosNext, angleCutOff) == 4)
+                && particles[i].GetDistanceRight(particles[GetNext(i)], 10000).GetLength() < distanceCutOff) {
+                chainLength++;
+            } else {
+                breaks_counts[MapOrientation(cosThis, cosNext, angleCutOff)]++;
+            }
+        }
+
+        calc_params params(std::string("cos(pi/3)"), std::to_string(distanceCutOff));
+        breaks brks(breaks_counts);
+
+        return std::make_tuple(params, brks);
+    }
+
 public:
     unsigned long Cycles;
 
@@ -51,12 +164,18 @@ public:
 
         archive(cereal::make_nvp("PotentialEnergy", GetAveragePotentialEnergy()));
 
-        if (SimulationParameters.SaveParticlesInfo) {
-            std::vector<CParticleBase> pts_save;
-            for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
-                pts_save.push_back(particles_old[i]);
-            }
 
+        std::vector<CParticleBase> pts_save;
+        for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
+            pts_save.push_back(particles_old[i]);
+        }
+        archive(cereal::make_nvp("ProbsData", GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 0.1)));
+        archive(cereal::make_nvp("ProbsData", GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 0.7)));
+        archive(cereal::make_nvp("ProbsData", GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 1.2)));
+
+        archive(cereal::make_nvp("Autocorrelation", AutoCorrelation_CPP(particles_init, pts_save)));
+
+        if (SimulationParameters.SaveParticlesInfo) {
             const CParticleBase *tmp = &pts_save[0];
             archive.saveBinaryValue(tmp, sizeof(CParticleBase) * particles_old.size(), "Particles");
         }
@@ -113,6 +232,8 @@ public:
     int ManagerProcId;
     int ProcCount;
 protected:
+    std::vector<CParticleBase> particles_init;
+
     std::vector<CYukawaDipolePt> particles_old;
 
     std::vector<CYukawaDipolePt> particles_new;

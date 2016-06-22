@@ -280,7 +280,6 @@ extern "C" void Function_GetChainOrientationProbabilityEnergy(char ** input_stri
         }
     }
 }
-
 bool IsLeft(double cosAngle, double cutOff){
     return cosAngle < -cutOff;
 }
@@ -306,7 +305,6 @@ int MapOrientation(double cosThis, double cosNext, double cutOff){
 
     return 999;
 }
-
 extern "C" void Function_GetChainOrientationProbabilityAngle(int*breaks_counts,
                                                              int*chain_counts,
                                                              char ** input_string,
@@ -336,6 +334,7 @@ extern "C" void Function_GetChainOrientationProbabilityAngle(int*breaks_counts,
 
     }
 }
+
 
 extern "C" void Function_GetChainOrientationProbabilityCorrelation(char ** input_string,
                                                               int*_ptCount,
@@ -499,8 +498,6 @@ extern "C" void Function_GetChainOrientationProbability(char ** input_string,
         }
     }
 }
-
-
 
 extern "C" void Function_GetChainOrientationProbabilityTest(char ** input_string,
                                                             int*_ptCount,

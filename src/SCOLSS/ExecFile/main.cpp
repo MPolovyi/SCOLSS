@@ -42,7 +42,7 @@ void InitializeSimulations(int argc, char **argv) {
     } else if (simType == "LD") {
         simT = ESimulationType::LangevinDynamics;
     } else {
-        std::cout << "Unknown simulation type. Exiting." << std::endl;
+        std::cout << "Unknown simulation type " << simType << ". Exiting." << std::endl;
         return;
     }
 
