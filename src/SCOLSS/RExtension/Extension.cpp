@@ -305,6 +305,7 @@ int MapOrientation(double cosThis, double cosNext, double cutOff){
 
     return 999;
 }
+
 extern "C" void Function_GetChainOrientationProbabilityAngle(int*breaks_counts,
                                                              int*chain_counts,
                                                              char ** input_string,
@@ -667,7 +668,6 @@ extern "C" void Function_GetDynamicChains(double *neigh_c,
         coords_first[i] = particles[0][i].Coordinates;
     }
 }
-
 
 extern "C" void Function_AutoCorrelation(double * averAutoCorr,
                                          int* sampleIndex,

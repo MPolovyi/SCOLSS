@@ -142,6 +142,67 @@ private:
         return std::make_tuple(params, brks);
     }
 
+    int get_nearest_index(std::vector<double> arr, double val, size_t size) const {
+        int ret = 0;
+        double dst_old = SimulationParameters.SystemSize;
+        for(int i = 0; i < size; i++){
+            double dst = std::abs(val - arr[i]);
+            if (dst < dst_old) {
+                dst_old = dst;
+                ret = i;
+            }
+        }
+        return ret;
+    }
+
+    std::pair<std::vector<double>, std::vector<double>> GetCorrelations_CPP(std::vector<double> corrs_calc_points,
+                                            std::vector<CParticleBase> particles) const {
+        size_t ptCount = SimulationParameters.PtCount;
+        size_t corrCount = corrs_calc_points.size();
+        const double& maxCorrLength = corrs_calc_points[corrCount-1];
+
+        std::vector<double> correlations_out;
+        correlations_out.resize(corrCount, 0);
+        std::vector<double> corr_counts;
+        corr_counts.resize(corrCount, 0);
+
+        double dist = 0;
+        for (size_t i = 0; i < ptCount; i++) {
+            auto& pt = particles[i];
+
+            size_t j = GetNext(i);
+
+            auto cosTheta1 = pt.GetOrientation().Z;
+
+            correlations_out[0] += cosTheta1*cosTheta1;
+            corr_counts[0]++;
+            while (j != i) {
+                const auto& pt_next = particles[j];
+
+                dist = pt.GetDistanceRight(pt_next, SimulationParameters.SystemSize).GetLength();
+                if(dist < maxCorrLength) {
+                    auto nIndex = get_nearest_index(corrs_calc_points, dist, corrCount);
+
+                    auto cosTheta2 = pt_next.GetOrientation().Z;
+
+                    correlations_out[nIndex] += cosTheta1 * cosTheta2;
+                    corr_counts[nIndex]++;
+
+                    j = GetNext(j);
+                }
+                else{
+                    break;
+                }
+            }
+        }
+
+        for (int k = 0; k < corrCount; ++k) {
+            correlations_out[k] /= ( corr_counts[k] != 0 ? corr_counts[k] : 1 );
+        }
+
+        return std::make_pair(corrs_calc_points, correlations_out);
+    }
+
 public:
     unsigned long Cycles;
 
@@ -164,14 +225,35 @@ public:
 
         archive(cereal::make_nvp("PotentialEnergy", GetAveragePotentialEnergy()));
 
-
         std::vector<CParticleBase> pts_save;
         for (size_t i = 0; i < SimulationParameters.PtCount; ++i) {
             pts_save.push_back(particles_old[i]);
         }
-        archive(cereal::make_nvp("ProbsData", GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 0.1)));
-        archive(cereal::make_nvp("ProbsData", GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 0.7)));
-        archive(cereal::make_nvp("ProbsData", GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 1.2)));
+
+        {
+            const std::tuple<calc_params, breaks> probs = GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 0.1);
+            archive.saveBinaryValue(&probs, sizeof(std::tuple<calc_params, breaks>), "ProbsData_01");
+        }
+        {
+            const std::tuple<calc_params, breaks> probs = GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 0.7);
+            archive.saveBinaryValue(&probs, sizeof(std::tuple<calc_params, breaks>), "ProbsData_07");
+        }
+        {
+            const std::tuple<calc_params, breaks> probs = GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 1.4);
+            archive.saveBinaryValue(&probs, sizeof(std::tuple<calc_params, breaks>), "ProbsData_14");
+        }
+
+        std::vector<double> corrs_calc_points;
+        for (int j = 0; j < 50; ++j) {
+            corrs_calc_points.push_back(j + SimulationParameters.ParticleDiameter);
+        }
+
+        auto length_correlations = GetCorrelations_CPP(corrs_calc_points, pts_save);
+
+        const double * length_correlations_x = &length_correlations.first[0];
+        archive.saveBinaryValue(length_correlations_x, sizeof(double)*50, "LengthCorrs_x");
+        const double * length_correlations_y = &length_correlations.second[0];
+        archive.saveBinaryValue(length_correlations_x, sizeof(double)*50, "LengthCorrs_y");
 
         archive(cereal::make_nvp("Autocorrelation", AutoCorrelation_CPP(particles_init, pts_save)));
 
