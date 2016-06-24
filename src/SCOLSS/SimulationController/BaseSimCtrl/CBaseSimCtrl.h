@@ -232,10 +232,10 @@ public:
 
         auto length_correlations = GetCorrelations_CPP(corrs_calc_points, pts_save);
 
-        const double * length_correlations_x = &length_correlations.first[0];
-        archive.saveBinaryValue(length_correlations_x, sizeof(double)*50, "LengthCorrs_x");
+//        const double * length_correlations_x = &length_correlations.first[0];
+//        archive.saveBinaryValue(length_correlations_x, sizeof(double)*50, "LengthCorrs_x");
         const double * length_correlations_y = &length_correlations.second[0];
-        archive.saveBinaryValue(length_correlations_x, sizeof(double)*50, "LengthCorrs_y");
+        archive.saveBinaryValue(length_correlations_y, sizeof(double)*50, "LengthCorrs_y");
 
         archive(cereal::make_nvp("Autocorrelation", AutoCorrelation_CPP(particles_init, pts_save)));
 
