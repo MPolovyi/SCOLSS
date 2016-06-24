@@ -57,10 +57,10 @@ public:
 
     template<class Archive>
     void save(Archive &archive) const {
-        archive(cereal::make_nvp("Density", Density));
-        archive(cereal::make_nvp("KbT", KbT));
-        archive(cereal::make_nvp("PtCount", PtCount));
-        archive(cereal::make_nvp("InitialConfiguration", InitialConfiguration));
+        archive(cereal::make_nvp("D", Density));
+        archive(cereal::make_nvp("T", KbT));
+        archive(cereal::make_nvp("N", PtCount));
+        archive(cereal::make_nvp("IC", InitialConfiguration));
     }
 
     template<class Archive>

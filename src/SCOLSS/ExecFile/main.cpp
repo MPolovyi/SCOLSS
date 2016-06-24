@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include <cereal/archives/json.hpp>
+#include <cereal/archives/binary.hpp>
 #include <cereal/types/polymorphic.hpp>
 
 #include <SCOLSS/SimulationController/MonteCarloSimCtrl/CMonteCarloSimParams.h>
@@ -186,13 +187,13 @@ void SaveDataToFile(std::shared_ptr<CBaseSimCtrl> &contr,
         Tar miniTarBall(miniSaveTarStream);
 
         {
-            std::fstream minimalFileStream((miniSaveFileName + std::to_string(cycle)).c_str(), std::ios_base::out);
-            cereal::JSONOutputArchive minimalFileArchive(minimalFileStream);
+            std::fstream minimalFileStream((miniSaveFileName + std::to_string(cycle)).c_str(), std::ios_base::out | std::ios::binary);
+            cereal::BinaryOutputArchive minimalFileArchive(minimalFileStream);
 
             switch (contr->SimulationParameters.SaveParticlesInfo) {
                 case true: {
-                    std::fstream mainFileStream((fullSaveFileName + std::to_string(cycle)).c_str(), std::ios_base::out);
-                    cereal::JSONOutputArchive mainFileArchive(mainFileStream);
+                    std::fstream mainFileStream((fullSaveFileName + std::to_string(cycle)).c_str(), std::ios_base::out | std::ios::binary);
+                    cereal::BinaryOutputArchive mainFileArchive(mainFileStream);
                     mainFileArchive(contr);
                     contr->SimulationParameters.SaveParticlesInfo = false;
                     minimalFileArchive(contr);

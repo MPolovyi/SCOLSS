@@ -17,6 +17,7 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/json.hpp>
+#include <cereal/archives/binary.hpp>
 #include <cereal/types/tuple.hpp>
 
 #include <SCOLSS/EPSPlot/EPSPlot.h>
@@ -60,23 +61,6 @@ private:
         }
     };
 
-    class calc_params{
-    private:
-        std::string AngleCut;
-        std::string DistCut;
-
-    public:
-        calc_params(std::string angle_cut, std::string dist_cut) : AngleCut(angle_cut), DistCut(dist_cut) {}
-
-        template <class archive>
-        void serialize(archive& arch) {
-            std::string a = "Function_GetChainOrientationProbabilityAngle";
-            arch(cereal::make_nvp("Function", a));
-            arch(cereal::make_nvp("AngleCut", AngleCut));
-            arch(cereal::make_nvp("DistCut", DistCut));
-        }
-    };
-
     double AutoCorrelation_CPP(std::vector<CParticleBase> zero_config,
                                std::vector<CParticleBase> current_config) const {
         double corr = 0;
@@ -114,7 +98,7 @@ private:
         return 999;
     }
 
-    std::tuple<calc_params, breaks> GetChainOrientationProbabilityAngle_CPP(std::vector<CParticleBase> particles,
+    breaks GetChainOrientationProbabilityAngle_CPP(std::vector<CParticleBase> particles,
                                                                             double angleCutOff,
                                                                             double distanceCutOff) const {
 
@@ -135,11 +119,9 @@ private:
                 breaks_counts[MapOrientation(cosThis, cosNext, angleCutOff)]++;
             }
         }
-
-        calc_params params(std::string("cos(pi/3)"), std::to_string(distanceCutOff));
         breaks brks(breaks_counts);
 
-        return std::make_tuple(params, brks);
+        return brks;
     }
 
     int get_nearest_index(std::vector<double> arr, double val, size_t size) const {
@@ -231,16 +213,16 @@ public:
         }
 
         {
-            const std::tuple<calc_params, breaks> probs = GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 0.1);
-            archive.saveBinaryValue(&probs, sizeof(std::tuple<calc_params, breaks>), "ProbsData_01");
+            const breaks probs = GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 0.1);
+            archive.saveBinaryValue(&probs, sizeof(breaks), "ProbsData_01");
         }
         {
-            const std::tuple<calc_params, breaks> probs = GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 0.7);
-            archive.saveBinaryValue(&probs, sizeof(std::tuple<calc_params, breaks>), "ProbsData_07");
+            const breaks probs = GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 0.7);
+            archive.saveBinaryValue(&probs, sizeof(breaks), "ProbsData_07");
         }
         {
-            const std::tuple<calc_params, breaks> probs = GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 1.4);
-            archive.saveBinaryValue(&probs, sizeof(std::tuple<calc_params, breaks>), "ProbsData_14");
+            const breaks probs = GetChainOrientationProbabilityAngle_CPP(pts_save, cos(M_PI / 3), 1.4);
+            archive.saveBinaryValue(&probs, sizeof(breaks), "ProbsData_14");
         }
 
         std::vector<double> corrs_calc_points;

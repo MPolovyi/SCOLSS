@@ -28,7 +28,7 @@ public:
     template<class Archive>
     void save(Archive& archive) const {
         archive(cereal::base_class<CBaseSimCtrl>(this));
-        archive(cereal::make_nvp("SimulationParameters", SimulationParameters));
+//        archive(cereal::make_nvp("SimulationParameters", SimulationParameters));
         archive(cereal::make_nvp("SimulationTime", GetSimulationTime()));
         archive(cereal::make_nvp("KineticEnergy", GetAverageKineticEnergy()));
     }

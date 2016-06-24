@@ -63,5 +63,6 @@ void CMonteCarloSimCtrl::DoTestRotation(size_t ptIndex) {
 
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/json.hpp>
+#include <cereal/archives/binary.hpp>
 
 CEREAL_REGISTER_TYPE(CMonteCarloSimCtrl);

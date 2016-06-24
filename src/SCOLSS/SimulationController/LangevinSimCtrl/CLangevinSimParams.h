@@ -28,7 +28,7 @@ public:
     template<class Archive>
     void save(Archive &archive) const {
         archive(cereal::make_nvp("Base", cereal::base_class<CBaseSimParams>(this)));
-        archive(cereal::make_nvp("TimeStep", TimeStep));
+//        archive(cereal::make_nvp("TimeStep", TimeStep));
     }
 
     template<class Archive>
