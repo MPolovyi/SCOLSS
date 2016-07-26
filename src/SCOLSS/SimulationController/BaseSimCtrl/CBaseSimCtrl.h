@@ -35,7 +35,7 @@ class CBaseSimCtrl {
 private:
     class breaks{
     public:
-        breaks(int* _breaks) {
+        breaks(std::vector<int> _breaks) {
             double summ = 0;
 
             for (int i = 0; i < 9; ++i) {
@@ -104,7 +104,8 @@ private:
 
         int ptCount = (int) particles.size();
 
-        int breaks_counts[10];
+        std::vector<int> breaks_counts;
+        breaks_counts.resize(10, 0);
 
         int chainLength = 0;
 
